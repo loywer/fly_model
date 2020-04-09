@@ -2,7 +2,6 @@ from direct.showbase.ShowBase import ShowBase
 from direct.showbase import DirectObject
 from direct.task import Task
 from panda3d.core import LineSegs, NodePath, Point3D
-from math import cos, sin, pi
 from numpy import append
 
 
