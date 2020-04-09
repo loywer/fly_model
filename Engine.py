@@ -30,16 +30,20 @@ class Engine(object):
     def __init__(self,propeller_R = 1.2, integral_result = 0):
         self.propeller_R = propeller_R
         self.integral_result = integral_result 
+   
     def Get_mode(self,mode):
             return  2*pi*(np.interp(mode,mode_arr,omega_arr,omega_arr[0],omega_arr[-1]))/60
+    
     def get_tractive_power(self, omega, speed):
         #omega = self.Get_mode(mode)
         J_new = pi * speed / (omega * self.propeller_R)
         Ct_new = self.Get_Ct(J_new)
         return (2/pi)**2*Air_density*(omega*self.propeller_R**2)**2*Ct_new
+   
     "функция вычисления текущего значения Ct"
     def Get_Ct(self,J_new):
         return np.interp(J_new,J,Ct,Ct[0],Ct[-1])
+    
     "Функция вычисления ускорения"
     def epsilon(self, speed, omega):
         return (self.get_tractive_power(omega,speed) - (0.027*Air_density*speed*speed/2)*14)/weight
