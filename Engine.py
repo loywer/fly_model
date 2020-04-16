@@ -27,9 +27,16 @@ Ct = [0.102122, 0.11097, 0.107621, 0.105191, 0.102446, 0.09947, 0.096775, 0.0947
 
 # Класс двигатель
 class Engine(object):
-    def __init__(self,propeller_R = 1.2, integral_result = 0):
+    def __init__(self,propeller_R = 1.2):
         self.propeller_R = propeller_R
-        self.integral_result = integral_result 
+        self.integral_result = 0
+    
+    # Функция получения входных данных
+    def Set_data(self,curren_speed, spec_speed, self.AirDensity):
+        self.curren_speed = curren_speed
+        self.spec_speed = spec_speed
+        self.air_density = AirDensity
+    
     # Функция расчёта режима полёта
     def Get_mode(self,mode):
             return  2*pi*(np.interp(mode,mode_arr,omega_arr,omega_arr[0],omega_arr[-1]))/60
@@ -38,28 +45,33 @@ class Engine(object):
     def get_tractive_power(self, omega, speed):
         J_new = pi * speed / (omega * self.propeller_R)
         Ct_new = self.Get_Ct(J_new)
-        array_tractive = [(2/pi)**2*Air_density*(omega*self.propeller_R**2)**2*Ct_new, 0, 0]
-        return array_tractive
+        tractive = (2/pi)**2*Air_density*(omega*self.propeller_R**2)**2*Ct_new
+        tractive_power = np.array([tractive, 0, 0])
+        return tractive_power
 
     # Функция вычисления текущего значения Ct
     def Get_Ct(self,J_new):
         return np.interp(J_new,J,Ct,Ct[0],Ct[-1])
-    
-    # Функция вычисления ускорения
-    def epsilon(self, speed, omega):
-        return (self.get_tractive_power(omega,speed) - (0.027*Air_density*speed*speed/2)*14)/weight
 
     def delta_speed(self,speed1,speed2):
         return speed1-speed2
 
     # Функция вычисления заданную угловую скорость вращения двигателя
     def spec_omega(self, spec_speed, current_speed):
-        ds = self.delta_speed(spec_speed,current_speed)
-        integral_result = integral_result + ds * dt
-        return kp * ds + ki * integral_result
+        ds = self.delta_speed(spec_speed, current_speed)
+        self.integral_result = self.integral_result + ds * dt
+        return kp * ds + ki * self.integral_result
 
     # Функция вычисления крутящего момента двигателя
-    def torque(self, omega, speed)
-        tractive_power = self.get_tractive_power(omega,speed)
-        arrat_moment = [7023.52273*tractive_power[0]/omega, 0, 0]
-        return arrat_moment
+    def torque(self, omega, spec_speed):
+        tractive_power = self.get_tractive_power(omega, spec_speed)
+        param = [7023.52273*tractive_power[0]/omega
+        array_moment = np.array(param, 0, 0])
+        return array_moment
+
+    # Функция вывода значений
+    def Get_data(self):
+        sp_omega = self.spec_omega(self.spec_omega, self.curren_speed)
+        thrust = self.get_tractive_power(sp_omega, self.current_speed)
+        moment = self.torque(sp_omega, self.spec_speed)
+        return thrust, moment
