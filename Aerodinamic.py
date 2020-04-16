@@ -1,14 +1,19 @@
 import numpy as np
-class Aerodynamics :
+from numpy import linalg as LA
+class Aerodynamics () :
     # Входные данные
-    def __init__(self, V, alpha, betta, DeltaElev, DeltaRud, DeltaAile, Alphadot):
+    def __init__(self, V, alpha, betta, DeltaElev, DeltaRud, DeltaAile, Alphadot,dt):
     #Масса и инерция
         self.mass = 1043.2
-        self.inertia = np.zeros((3,3)) ## Должна быть матрица, но ее нет(((
-        self.Ix=self.inertia[0,0]
-        self.Iy=self.inertia[1,1]
-        self.Iz=self.inertia[2,2]
-        self.Ixz=self.inertia[0,2]
+        self.inertia = np.diag([948, 1346, 1967])
+        #_______________________Комменты убрать
+        #self.Ix=self.inertia[0,0]
+        #self.Iy=self.inertia[1,1]
+        #self.Iz=self.inertia[2,2]
+        self.ang_vel=np.array([0,0,0])
+        self.q=self.ang_vel[0,0]
+        self.p=self.ang_vel[0,1]
+        self.r=self.ang_vel[0,2]
     #Аэродинамика    
         self.alpha_1 =np.rad2deg(np.array([-7.5,-5,-2.5,0,2.5,5,7.5,10,15,17,18,19.5])) #рад
         self.betta_1 = np.rad2deg(np.array([0,1,2,3,4,5,6,7,8,9,10,11]))  #рад
@@ -66,7 +71,7 @@ class Aerodynamics :
         self.c = 1.49352   #м  #Хорда
     #Окружающая среда
         self.ro=1.225      #Плотность
-    #Входные данные
+    #Данные полученные из других программ
         self.V=V
         self.alpha = alpha
         self.betta = betta  
@@ -74,77 +79,86 @@ class Aerodynamics :
         self.DeltaRud = DeltaRud
         self.DeltaAile = DeltaAile
         self.Alphadot = Alphadot
+        self.dt=dt
 
 # Функция вычисляющая коэффициенты cx,cy,cz
     def Aero_Forces_coeff (self):
     #Вычисление Cx
-        self.c=[]
+        S=[]
         for i in range(12):
-            self.CDDD = np.array(np.interp( self.DeltaElev, self.deltaElev, self.CDDeltaElev[:,i]))
-            self.c.append( self.CDDD)
-        self.c = np.asarray( self.c)      
-        self.CDD = np.interp(self.alpha, self.alpha_1, self.c)
-        self.cx_1 = np.interp(self.alpha, self.alpha_1, self.CD)
-        self.cx = self.CDD + self.cx_1
+            CDDD = np.array(np.interp( self.DeltaElev, self.deltaElev, self.CDDeltaElev[:,i]))
+            S.append( CDDD)
+        S = np.asarray(S)      
+        CDD = np.interp(self.alpha, self.alpha_1, S)
+        cx_1 = np.interp(self.alpha, self.alpha_1, self.CD)
+        self.cx = CDD + cx_1
     #Вычисление Cy
-        self.cy_1 = np.interp(self.alpha,self.alpha_1,self.CL)
-        self.cy_2 = np.interp(self.alpha,self.alpha_1,self.CLAlphadot)
-        self.cy_3 = np.interp(self.alpha,self.alpha_1,self.CLQ)
-        self.cy_4 = np.interp(self.DeltaElev,self.deltaElev,self.CLDdeltaElev)
-        self.cy = self.cy_1 +((self.c)/2*self.V)*(self.cy_2*self.Alphadot+self.cy_3*q) + self.cy_4 * self.DeltaElev
+        cy_1 = np.interp(self.alpha,self.alpha_1,self.CL)
+        cy_2 = np.interp(self.alpha,self.alpha_1,self.CLAlphadot)
+        cy_3 = np.interp(self.alpha,self.alpha_1,self.CLQ)
+        cy_4 = np.interp(self.DeltaElev,self.deltaElev,self.CLDdeltaElev)
+        self.cy = cy_1 +((self.c)/2*self.V)*(cy_2*self.Alphadot+cy_3 * self.q) + cy_4 * self.DeltaElev
     #Вычисление Cz
-        self.cz_1 = np.interp(self.betta,self.betta_1,self.CYBeta) 
-        self.cz_2 = np.interp(self.alpha,self.alpha_1,self.CYp) 
-        self.cz_3 = np.interp(self.alpha,self.alpha_1,self.CYr)
-        self.cz_4 = np.interp(self.alpha,self.alpha_1,self.CYDeltaRud)
-        self.cz = (self.cz_1 * self.betta)+((self.b)/2*self.V)*(self.cz_2*p+self.cz_3*r)+ +(self.cz_4*self.DeltaRud)
+        cz_1 = np.interp(self.betta,self.betta_1,self.CYBeta) 
+        cz_2 = np.interp(self.alpha,self.alpha_1,self.CYp) 
+        cz_3 = np.interp(self.alpha,self.alpha_1,self.CYr)
+        cz_4 = np.interp(self.alpha,self.alpha_1,self.CYDeltaRud)
+        self.cz = (cz_1 * self.betta)+((self.b)/2*self.V)*(cz_2 * self.p+cz_3 * self.r)+ +(cz_4*self.DeltaRud)
+        koeff = np.array([self.cx,self.cy,self.cz])
+        return koeff
 
 #Вычисление аэродинамических сил
-    def Aero_Forces(self):
-        self.Fx=self.cx * self.ro * (self.V**2) * (self.Sw)/2
-        self.Fy=self.cy * self.ro * (self.V**2) * (self.Sw)/2
-        self.Fz=self.cz * self.ro * (self.V**2) * (self.Sw)/2
-        self.F=np.array([self.Fx, self.Fy, self.Fz])
+    def Aero_Forces(self,koeff):
+        Fx=koeff[0,0] * self.ro * (self.V**2) * (self.Sw)/2
+        Fy=koeff[0,1] * self.ro * (self.V**2) * (self.Sw)/2
+        Fz=koeff[0,2] * self.ro * (self.V**2) * (self.Sw)/2
+        F=np.array([Fx,Fy,Fz])
+        return F
 
 #Вычисление коэффициентов аэродинамических моментов 
     def Aero_Moment_coeff (self):
     #Вычисление mx
-        self.mx_1 = np.interp(self.alpha, self.alpha_1, self.Clbeta)
-        self.mx_2 = np.interp(self.alpha, self.alpha_1, self.Clp)
-        self.mx_3 = np.interp(self.alpha, self.alpha_1, self.Clr)
-        self.mx_4 = np.interp(self.alpha, self.alpha_1, self.ClDeltaRud)
-        self.mx_5 = np.interp(self.DeltaAile, self.deltaAile, self.ClDeltaAile)
-        self.mx = (self.mx_1 * self.betta) + ((self.c) / 2 * self.V) * (self.mx_2 * p+self.mx_3 * r)+(self.mx_4 * self.DeltaRud)+(self.mx_5 * self.DeltaAile)
+        mx_1 = np.interp(self.alpha, self.alpha_1, self.Clbeta)
+        mx_2 = np.interp(self.alpha, self.alpha_1, self.Clp)
+        mx_3 = np.interp(self.alpha, self.alpha_1, self.Clr)
+        mx_4 = np.interp(self.alpha, self.alpha_1, self.ClDeltaRud)
+        mx_5 = np.interp(self.DeltaAile, self.deltaAile, self.ClDeltaAile)
+        self.mx = (mx_1 * self.betta) + ((self.c) / 2 * self.V) * (mx_2 * self.p + mx_3 * self.r)+(mx_4 * self.DeltaRud)+(mx_5 * self.DeltaAile)
     #Вычисление my
-        self.my_1 = np.interp(self.alpha, self.alpha_1, self.CM)
-        self.my_2 = np.interp(self.alpha, self.alpha_1, self.CMq)
-        self.my_3 = np.interp(self.alpha, self.alpha_1, self.CMAlphadot)
-        self.my_4 = np.interp(self.DeltaElev, self.deltaElev, self.CMDeltaElev)
-        self.my = (self.my_1 * self.alpha) +((self.c) / 2 * self.V) * (self.my_2 * q+self.my_3 * self.Alphadot) + self.my_4 * self.DeltaElev
+        my_1 = np.interp(self.alpha, self.alpha_1, self.CM)
+        my_2 = np.interp(self.alpha, self.alpha_1, self.CMq)
+        my_3 = np.interp(self.alpha, self.alpha_1, self.CMAlphadot)
+        my_4 = np.interp(self.DeltaElev, self.deltaElev, self.CMDeltaElev)
+        self.my = (my_1 * self.alpha) +((self.c) / 2 * self.V) * (my_2 * self.q+my_3 * self.Alphadot) + my_4 * self.DeltaElev
     #Вычисление mz
-        self.mz_1 = np.interp(self.betta, self.betta_1, self.CNbeta)
-        self.mz_2 = np.interp(self.alpha, self.alpha_1, self.CNp)
-        self.mz_3 = np.interp(self.alpha, self.alpha_1, self.CNr)
-        self.mz_4 = np.interp(self.alpha, self.alpha_1, self.CNDeltaRud)
-        self.k = []
+        mz_1 = np.interp(self.betta, self.betta_1, self.CNbeta)
+        mz_2 = np.interp(self.alpha, self.alpha_1, self.CNp)
+        mz_3 = np.interp(self.alpha, self.alpha_1, self.CNr)
+        mz_4 = np.interp(self.alpha, self.alpha_1, self.CNDeltaRud)
+        k = []
         for i in range(12):
-            self.CNNN = np.array(np.interp(self.DeltaAile, self.deltaAile, self.CNDeltaAile[:,i]))
-            self.k.append(self.CNNN)
-        self.k = np.asarray(self.k)     
-        self.mz_5 = np.interp(self.alpha, self.alpha_1, self.k)
-        self.mz = (self.mz_1 * self.betta) + ((self.c) / 2 * self.V) * (self.mz_2 * p + self.mz_3 * r) + (self.mz_4 * self.DeltaRud) + self.mz_5 * self.DeltaAile
+            CNNN = np.array(np.interp(self.DeltaAile, self.deltaAile, self.CNDeltaAile[:,i]))
+            k.append(CNNN)
+        k = np.asarray(k)     
+        mz_5 = np.interp(self.alpha, self.alpha_1, k)
+        self.mz = (mz_1 * self.betta) + ((self.c) / 2 * self.V) * (mz_2 * self.p + mz_3 * self.r) + (mz_4 * self.DeltaRud) + mz_5 * self.DeltaAile
+        moment = np.array([self.mx,self.my,self.mz])
+        return moment
 
 #Вычисление аэродинамических моментов
-    def Aero_Moment (self):
-        self.Mx = self.mx * self.ro * self.b *(self.V**2) * self.Sw/2
-        self.My = self.my * self.ro * self.c *(self.V**2) * self.Sw/2
-        self.Mz = self.mz * self.ro * self.b *(self.V**2) * self.Sw/2
-        self.M = np.array([self.Mx,self.My,self.Mz])
+    def Aero_Moment (self,moment):
+        Mx = moment[0,0] * self.ro * self.b *(self.V**2) * self.Sw/2
+        My = moment[0,1] * self.ro * self.c *(self.V**2) * self.Sw/2
+        Mz = moment[0,2] * self.ro * self.b *(self.V**2) * self.Sw/2
+        M = np.array([[Mx],[My],[Mz]])
+        return M
 
-
+    def Integrator (self,F,dt):
+        V_new=self.V+F*self.dt
+        return V_new
+        
 # Вычисление угловых скоростей
  #   def Angular_vel(self):
- #       dp_dt = (self.mx * self.Iz + self.mz * self.Ixz - q * r * (self.Iz ** 2 - self.Iz * self.Iy + self.Ixz ** 2) + p * q * self.Ixz * (self.Ix + self.Iz - self.Iy)) / (self.Ix * self.Iz - self.Ixz ** 2)
- #       dq_dt = (self.my + (self.Iz - self.Ix) * p * r - self.Ixz * (p ** 2 - r ** 2)) / self.Iy
- #       dr_dt = (self.mx * self.Ixz + self.mz * self.Ix + p * q * (self.Ix ** 2 - self.Ix * self.Iy + self.Ixz ** 2) - q * r * self.Ixz * (self.Iz + self.Ix - self.Iy)) / (self.Ix * self.Iz - self.Ixz ** 2)
-
+        #self.w=np.array([r],[q],[w])
+        #self.k = self.inertia*self.w
+        #dw_dt=LA.inv(self.inertia)*(self.M-np.dot(self.w,self.k)
