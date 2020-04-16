@@ -14,6 +14,7 @@ array_gamma_now = []    # массив значений крена самоле�
 array_gamma_spec = []   # заданный крен самолета
 
 eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
+dt = 0.02
 
 # Функция получения положения руля высоты и текущей перегрузки 
 #   ny_spec - заданное значение перегрузки   
@@ -34,11 +35,12 @@ def get_elev_and_ny_new (ny_spec) :
     ny_now = 0 # начальное значение перегрузки
     elev_new = 0 # начальное положение угла руля высоты
      
-    k = 0.001
+    k = 0.01
     t = 0
+    T = 20
 
     #while ((abs(ny_now - ny_spec) > eps_ny) and (t <= 100)) :
-    while (t <= 100) :
+    while (t <= T) :
     #while (ny_now != ny_spec) :
     
         array_t.append(t)
@@ -47,8 +49,11 @@ def get_elev_and_ny_new (ny_spec) :
         array_ny_spec.append(ny_spec)
 
         ny_now = get_ny(elev_new) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
-        elev_new = elev_new + k * (ny_spec - ny_now) # получение отклонения рулей высоты
+        #elev_new = get_ny_2(Cy_now) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
+        
         #elev_new =  0.1 * (ny_spec - ny_now) # получение отклонения рулей высоты
+        #elev_new = elev_new + k * (ny_spec - ny_now) # получение отклонения рулей высоты
+        elev_new = elev_new + ((ny_spec - ny_now) * k * (1 - np.exp(-t/T))) # получение отклонения рулей высоты
 
         if (elev_new * 180.0/np.pi >= 26) :
             elev_new = 26/180.0*np.pi
@@ -56,9 +61,8 @@ def get_elev_and_ny_new (ny_spec) :
         if (elev_new * 180.0/np.pi <= -28) :
             elev_new = -28/180.0*np.pi
     
+        t = t + dt
 
-        t = t + 0.02
-        
     return elev_new, array_elev
 
 # Функция получения положения элерона и крена самолета 
@@ -79,12 +83,13 @@ def get_GammaAngle_and_eleron_now (gamma_spec) :
     eleron_now = 0.0 # начальное положение элерона
     gamma_now = 0 # начальный угол крена самолета
     
-    k = 1.5
+    k = 3.1
     t = 0
     dt = 0.02
+    T = 2.7
 
     #while ((abs(gamma_spec - gamma_now) > 0.01) and (t <= 20)) :
-    while  (t <= 20):
+    while  (t <= 10):
         
         array_time_eleron.append(t)
         array_eleron_now.append(eleron_now*180.0/np.pi)
@@ -96,7 +101,9 @@ def get_GammaAngle_and_eleron_now (gamma_spec) :
         gamma_now, w0 = get_gamma(eleron_now)
         #print ("gamma_now = ", gamma_now)
 
-        eleron_now = k*(gamma_spec - gamma_now) - 3*w0
+        #eleron_now = k*(gamma_spec - gamma_now) - 3*w0
+        eleron_now = k*(gamma_spec - gamma_now) * (1 - np.exp(-t/T)) - 3*w0
+        #elev_new = elev_new + ((ny_spec - ny_now) * k * (1 - np.exp(-t/T))) # получение отклонения рулей высоты
         #print ("eleron_now = ", eleron_now)
 
         if (eleron_now * 180.0/np.pi >= 20) :
