@@ -21,14 +21,13 @@ class Control:
         self.gamma_now = gamma_now
         self.w0 = w0
 
-        return self.ny_spec, self.ny_now, self.gamma_spec, self.gamma_now, self.w0
-
-    def get_data (self, elev_new, eleron_now) :
-
-        self.elev_new = elev_new
-        self.eleron_now = eleron_now
-
+    def get_data (self) :
         return self.elev_new, self.eleron_now
+
+
+    def aperiodic_link (self, T) :
+        dt = 0.02
+        return (1 - np.exp(-dt/T))
 
 
     # Функция получения положения руля высоты и текущей перегрузки 
@@ -37,7 +36,9 @@ class Control:
      
         #self.ny_now = get_ny(self.elev_new) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
         #self.elev_new = self.elev_new + k_elev * (ny_spec - ny_now) # получение отклонения рулей высоты
-        self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * (1 - np.exp(-dt/T_elev))) # получение отклонения рулей высоты
+        #self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * (1 - np.exp(-dt/T_elev))) # получение отклонения рулей высоты
+        self.transition_function = self.aperiodic_link(T_elev)
+        self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * self.transition_function)
         #elev_new =  0.1 * (ny_spec - ny_now) # получение отклонения рулей высоты
 
         if (self.elev_new * 180.0/np.pi >= 26) :
@@ -55,7 +56,11 @@ class Control:
         #self.gamma_now, self.w0 = get_gamma(self.eleron_now)
 
         #self.eleron_now = k_eleron * (gamma_spec - gamma_now) - 3*w0
-        self.eleron_now = k_eleron * (gamma_spec - gamma_now) * (1 - np.exp(-dt/T_eleron)) - 3*w0
+        #self.eleron_now = k_eleron * (gamma_spec - gamma_now) * (1 - np.exp(-dt/T_eleron)) - 3*w0
+
+        self.transition_function = self.aperiodic_link(T_eleron)
+        self.eleron_now = k_eleron * (gamma_spec - gamma_now) * self.transition_function(T_eleron) - 3*w0
+
         # t == dt
 
         if (self.eleron_now * 180.0/np.pi >= 20) :
