@@ -2,7 +2,7 @@ import numpy as np
 from numpy import linalg as LA
 class Aerodynamics () :
     # Входные данные
-    def __init__(self):
+    def __init__(self,H,alpha,betta,kren,kurs,tang):
     #Масса и инерция
         self.mass = 1043.2
         self.inertia = np.diag([948, 1346, 1967])
@@ -25,7 +25,6 @@ class Aerodynamics () :
                             [0.00273,0.00438,0.00614,0.00796,0.0098,0.0117,0.0135,0.0155,0.0202,0.0224,0.0236,0.0255]])
         #Входные данные для Cy
         self.CL = np.array([-0.571,-0.321,-0.083,0.148,0.392,0.65,0.918,1.195,1.659,1.789,1.84,1.889])
-        self.CLAlphadot = np.array([2.434,2.362,2.253,2.209,2.178,2.149,2.069,1.855,1.185,0.8333,0.6394,0.4971])
         self.CLQ = np.array([7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282])
         self.CLDdeltaElev = np.array([-0.132,-0.123,-0.082,-0.041,0,0.061,0.116,0.124,0.137])   
         #Входные данные для Cz
@@ -42,7 +41,6 @@ class Aerodynamics () :
         #Входные данные для my
         self.CM=np.array([0.0597, 0.0498, 0.0314, 0.0075, -0.0248, -0.068, -0.1227, -0.1927, -0.3779, -0.4605, -0.5043, -0.5496])
         self.CMq=np.array([-6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232])
-        self.CMAlphadot=np.array([-6.64, -6.441, -6.146, -6.025, -5.942, -5.861, -5.644, -5.059, -3.233, -2.273, -1.744, -1.356])
         self.CMDeltaElev=np.array([0.3302, 0.3065, 0.2014, 0.1007, -0.0002, -0.1511, -0.2863, -0.3109, -0.345])
         #Входные данные для mz
         self.CNbeta=np.array([0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126])
@@ -63,36 +61,31 @@ class Aerodynamics () :
         self.b = 10.91184  #м  #Размах
         self.c = 1.49352   #м  #Хорда
     #Сила притяжения
-        self.G = 9,81
-    #Данные полученные из других программ  
-    def risk_vxod (self,risk):
-        self.risk=set(risk) 
-    def tang_vxod (self,tang):
-        self.tang=set(tang)
-    def kren_vxod (self,kren):
-        self.kren =set(kren)   
+        self.G = np.array([0,9,81,0])
+    #Входящие данные
+        self.alpha=alpha
+        self.betta=betta
+        self.kurs=kurs
+        self.tang=tang
+        self.kren=kren
+    #Данные полученные из других программ   
     def atmos (self,ro):
         self.ro=set(ro)    #Плотность
     def speed (self,V):
-        self.V=set(V)
-    def alpha_vxod (self,alpha):
-        self.alpha=set(alpha) 
-    def betta_vxod (self,betta):
-        self.betta=set(betta)
+        self.V=np.array(V)
     def DeltaElev_vxod (self,DeltaElev):
         self.DeltaElev =set(DeltaElev) 
     def DeltaRud_vxod (self,DeltaRud):
         self.DeltaRud=set(DeltaRud)
     def DeltaAile_vxod (self,DeltaAile):
         self.DeltaAile = set(DeltaAile)    
-    def AlphaDot_vxod (self,Alphadot):
-        self.Alphadot = set(Alphadot)
-    def dt_vxod (self,dt):
-        self.dt=set(dt)
     def Tyaga_vxod (self,P):
-        self.P=set(P)
+        self.P=np.array([P,0,0])
 
 #          ------------------------------------   Решение   --------------------------------------------------------------
+# Функция вычисление модуля скорости
+    def Mod_V (self):
+        self.V_sr=abs(self.V[0]+self.V[1]+self.V[2])
 
 # Функция вычисляющая коэффициенты cx,cy,cz
     def Aero_Forces_coeff (self):
@@ -104,13 +97,12 @@ class Aerodynamics () :
         S = np.asarray(S)      
         CDD = np.interp(self.alpha, self.alpha_1, S)
         cx_1 = np.interp(self.alpha, self.alpha_1, self.CD)
-        self.cx = CDD + cx_1
+        self.cx = (-1) * (CDD + cx_1)
     #Вычисление Cy
         cy_1 = np.interp(self.alpha,self.alpha_1,self.CL)
-        cy_2 = np.interp(self.alpha,self.alpha_1,self.CLAlphadot)
-        cy_3 = np.interp(self.alpha,self.alpha_1,self.CLQ)
-        cy_4 = np.interp(self.DeltaElev,self.deltaElev,self.CLDdeltaElev)
-        self.cy = cy_1 +((self.c)/2*self.V)*(cy_2*self.Alphadot+cy_3 * self.ang_vel[0,1]) + cy_4 * self.DeltaElev
+        cy_2 = np.interp(self.alpha,self.alpha_1,self.CLQ)
+        cy_3 = np.interp(self.DeltaElev,self.deltaElev,self.CLDdeltaElev)
+        self.cy = cy_1 +((self.c)/2*self.V)*cy_2 * self.ang_vel[0,1] + cy_3 * self.DeltaElev
     #Вычисление Cz
         cz_1 = np.interp(self.betta,self.betta_1,self.CYBeta) 
         cz_2 = np.interp(self.alpha,self.alpha_1,self.CYp) 
@@ -122,11 +114,10 @@ class Aerodynamics () :
 
 #Вычисление аэродинамических сил
     def Aero_Forces(self,koeff):
-        Fx=((koeff[0,0] * self.ro * (self.V**2) * (self.Sw)/2)/self.mass)+self.P
-        Fy=self.mass*((koeff[0,1] * self.ro * (self.V**2) * (self.Sw)/2)-self.G)
-        Fz=(koeff[0,2] * self.ro * (self.V**2) * (self.Sw)/2)/self.mass
-        F=np.array([Fx,Fy,Fz])
-        return F
+        Fx=koeff[0] * self.ro * (self.V_sr**2) * (self.Sw)/2
+        Fy=koeff[1] * self.ro * (self.V_sr**2) * (self.Sw)/2
+        Fz=koeff[2] * self.ro * (self.V_sr**2) * (self.Sw)/2
+        self.F=np.array([Fx,Fy,Fz])
 
 #Вычисление коэффициентов аэродинамических моментов 
     def Aero_Moment_coeff (self):
@@ -136,13 +127,12 @@ class Aerodynamics () :
         mx_3 = np.interp(self.alpha, self.alpha_1, self.Clr)
         mx_4 = np.interp(self.alpha, self.alpha_1, self.ClDeltaRud)
         mx_5 = np.interp(self.DeltaAile, self.deltaAile, self.ClDeltaAile)
-        self.mx = (mx_1 * self.betta) + ((self.c) / 2 * self.V) * (mx_2 * self.ang_vel[0,0] + mx_3 * self.ang_vel[0,2])+(mx_4 * self.DeltaRud)+(mx_5 * self.DeltaAile)
+        self.mx = (mx_1 * self.betta) + ((self.c) / 2 * self.V) * (mx_2 * self.ang_vel[0] + mx_3 * self.ang_vel[0,2])+(mx_4 * self.DeltaRud)+(mx_5 * self.DeltaAile)
     #Вычисление my
         my_1 = np.interp(self.alpha, self.alpha_1, self.CM)
         my_2 = np.interp(self.alpha, self.alpha_1, self.CMq)
-        my_3 = np.interp(self.alpha, self.alpha_1, self.CMAlphadot)
-        my_4 = np.interp(self.DeltaElev, self.deltaElev, self.CMDeltaElev)
-        self.my = (my_1 * self.alpha) +((self.c) / 2 * self.V) * (my_2 * self.ang_vel[0,1] + my_3 * self.Alphadot) + my_4 * self.DeltaElev
+        my_3 = np.interp(self.DeltaElev, self.deltaElev, self.CMDeltaElev)
+        self.my = (my_1 * self.alpha) +((self.c) / 2 * self.V) * (my_2 * self.ang_vel[1] ) + my_3 * self.DeltaElev
     #Вычисление mz
         mz_1 = np.interp(self.betta, self.betta_1, self.CNbeta)
         mz_2 = np.interp(self.alpha, self.alpha_1, self.CNp)
@@ -154,39 +144,42 @@ class Aerodynamics () :
             k.append(CNNN)
         k = np.asarray(k)     
         mz_5 = np.interp(self.alpha, self.alpha_1, k)
-        self.mz = (mz_1 * self.betta) + ((self.c) / 2 * self.V) * (mz_2 * self.ang_vel[0,0] + mz_3 * self.ang_vel[0,2]) + (mz_4 * self.DeltaRud) + mz_5 * self.DeltaAile
+        self.mz = (mz_1 * self.betta) + ((self.c) / 2 * self.V) * (mz_2 * self.ang_vel[0] + mz_3 * self.ang_vel[2]) + (mz_4 * self.DeltaRud) + mz_5 * self.DeltaAile
         moment = np.array([self.mx,self.my,self.mz])
         return moment
 
 #Вычисление аэродинамических моментов
     def Aero_Moment (self,moment):
-        Mx = moment[0,0] * self.ro * self.b *(self.V**2) * self.Sw/2
-        My = moment[0,1] * self.ro * self.c *(self.V**2) * self.Sw/2
-        Mz = moment[0,2] * self.ro * self.b *(self.V**2) * self.Sw/2
-        M = np.array([[Mx],[My],[Mz]])
+        Mx = moment[0] * self.ro * self.b *(self.V_sr**2) * self.Sw/2
+        My = moment[1] * self.ro * self.c *(self.V_sr**2) * self.Sw/2
+        Mz = moment[2] * self.ro * self.b *(self.V_sr**2) * self.Sw/2
+        M = np.array([Mx,My,Mz])
         return M
 
 #Матрица перехода из НСК в ССК
-    def matrix_NSK_CCK (self,tang,risk,kren):
-        matrix1 = np.array([[(np.cos(risk))*(np.cos(tang) , np.sin(tang)) , ((-1)*(np.sin(risk))*(np.cos(tang)))],
-            [(np.sin(risk)*np.sin(kren)-np.cos(risk)*np.sin(tang)*np.cos(kren)) , (np.cos(tang)*np.cos(kren)) , (np.cos(risk)*np.sin(kren)+np.sin(risk)*np.sin(tang)*np.cos(kren))],
-            [(np.sin(risk)*np.cos(kren)-np.cos(risk)*np.sin(tang)*np.sin(kren)) , (-1)*(np.cos(tang)*np.sin(kren)) , (np.cos(risk)*np.cos(kren)+np.sin(risk)*np.sin(tang)*np.sin(kren))]])
-        return matrix1
+    def matrix_NSK_CCK (self):
+        self.matrix1 = np.array([[(np.cos(self.kurs))*(np.cos(self.tang) , np.sin(self.tang)) , ((-1)*(np.sin(self.kurs))*(np.cos(self.tang)))],
+            [(np.sin(self.kurs)*np.sin(self.kren)-np.cos(self.kurs)*np.sin(self.tang)*np.cos(self.kren)) , (np.cos(self.tang)*np.cos(self.kren)) , (np.cos(self.kurs)*np.sin(self.kren)+np.sin(self.kurs)*np.sin(self.tang)*np.cos(self.kren))],
+            [(np.sin(self.kurs)*np.cos(self.kren)-np.cos(self.kurs)*np.sin(self.tang)*np.sin(self.kren)) , (-1)*(np.cos(self.tang)*np.sin(self.kren)) , (np.cos(self.kurs)*np.cos(self.kren)+np.sin(self.kurs)*np.sin(self.tang)*np.sin(self.kren))]])
 
-#Матрица перехода из ССК в СкСК
-    def matrix_CCK_CkCK (self,alpha,betta):
-        matrix2 = np.inv( np.array([[(np.cos(alpha)*np.cos(betta)) , (np.sin(alpha)) , ((-1)*np.cos(alpha)*np.sin(betta))],
-                        [((-1)*np.sin(alpha)*np.cos(betta)) , (np.cos(betta)) , (np.sin(alpha)*np.sin(betta))],
-                        [(np.sin(betta)) , 0 , (np.cos(betta))]]))
-        return matrix2
+#Матрица перехода из СкСК в ССК
+    def matrix_CkCK_CCK (self):
+        self.matrix2 = np.array([[(np.cos(self.alpha)*np.cos(self.betta)) , (np.sin(self.alpha)) , ((-1)*np.cos(self.alpha)*np.sin(self.betta))],
+                    [((-1)*np.sin(self.alpha)*np.cos(self.betta)) , (np.cos(self.betta)) , (np.sin(self.alpha)*np.sin(self.betta))],
+                    [(np.sin(self.betta)) , 0 , (np.cos(self.betta))]])
+
+#Функция вычисляющая силы действующие на самолет
+    def F_samolet (self):
+        self.G_new = self.G*self.matrix1
+        self.F_sam=(self.F/self.mass) - self.G_new + self.P
+
+#Функция нахождения новых альфа и бетта
+    def alpha_betta_new (self):
+        self.alpha_new = self.V[0]/self.V[1]
+        self.betta_new = self.V[0]/self.V[2]
+
 
 #Интегратор
     def Integrator (self,F,dt):
-        V_new=self.V+F*self.dt
+        V_new=self.V+F*dt
         return V_new
-
-# Вычисление скоростей
- #   def Angular_vel(self):
-        #self.w=np.array([r],[q],[w])
-        #self.k = self.inertia*self.w
-        #dw_dt=LA.inv(self.inertia)*(self.M-np.dot(self.w,self.k)
