@@ -102,13 +102,13 @@ class Aerodynamics () :
         cy_1 = np.interp(self.alpha,self.alpha_1,self.CL)
         cy_2 = np.interp(self.alpha,self.alpha_1,self.CLQ)
         cy_3 = np.interp(self.DeltaElev,self.deltaElev,self.CLDdeltaElev)
-        self.cy = cy_1 +((self.c)/2*self.V)*cy_2 * self.ang_vel[0,1] + cy_3 * self.DeltaElev
+        self.cy = cy_1 +((self.c)/2*self.V)*cy_2 * self.ang_vel[1] + cy_3 * self.DeltaElev
     #Вычисление Cz
         cz_1 = np.interp(self.betta,self.betta_1,self.CYBeta) 
         cz_2 = np.interp(self.alpha,self.alpha_1,self.CYp) 
         cz_3 = np.interp(self.alpha,self.alpha_1,self.CYr)
         cz_4 = np.interp(self.alpha,self.alpha_1,self.CYDeltaRud)
-        self.cz = (cz_1 * self.betta)+((self.b)/2*self.V)*(cz_2 * self.ang_vel[0,0]+cz_3 * self.ang_vel[0,2])+ +(cz_4*self.DeltaRud)
+        self.cz = (cz_1 * self.betta)+((self.b)/2*self.V)*(cz_2 * self.ang_vel[0]+cz_3 * self.ang_vel[2])+ +(cz_4*self.DeltaRud)
         koeff = np.array([self.cx,self.cy,self.cz])
         return koeff
 
@@ -127,7 +127,7 @@ class Aerodynamics () :
         mx_3 = np.interp(self.alpha, self.alpha_1, self.Clr)
         mx_4 = np.interp(self.alpha, self.alpha_1, self.ClDeltaRud)
         mx_5 = np.interp(self.DeltaAile, self.deltaAile, self.ClDeltaAile)
-        self.mx = (mx_1 * self.betta) + ((self.c) / 2 * self.V) * (mx_2 * self.ang_vel[0] + mx_3 * self.ang_vel[0,2])+(mx_4 * self.DeltaRud)+(mx_5 * self.DeltaAile)
+        self.mx = (mx_1 * self.betta) + ((self.c) / 2 * self.V) * (mx_2 * self.ang_vel[0] + mx_3 * self.ang_vel[2])+(mx_4 * self.DeltaRud)+(mx_5 * self.DeltaAile)
     #Вычисление my
         my_1 = np.interp(self.alpha, self.alpha_1, self.CM)
         my_2 = np.interp(self.alpha, self.alpha_1, self.CMq)
