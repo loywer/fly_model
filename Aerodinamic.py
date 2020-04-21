@@ -170,16 +170,16 @@ class Aerodynamics () :
 
 #Функция вычисляющая силы действующие на самолет
     def F_samolet (self):
-        self.G_new = self.G*self.matrix1
-        self.F_sam=(self.F/self.mass) - self.G_new + self.P
+        self.G_new = self.matrix1.dot(self.G)
+        self.F_sam=(self.F + self.P / self.mass) - self.G_new
 
 #Функция нахождения новых альфа и бетта
     def alpha_betta_new (self):
-        self.alpha_new = self.V[0]/self.V[1]
-        self.betta_new = self.V[0]/self.V[2]
+        self.alpha_new = np.arctan(self.V[0]/self.V[1])
+        self.betta_new = np.arctan(self.V[0]/self.V[2])
 
 
 #Интегратор
     def Integrator (self,dt):
-        V_new=self.V+F_sam*dt
+        V_new=self.V+self.F_sam * dt
         return V_new
