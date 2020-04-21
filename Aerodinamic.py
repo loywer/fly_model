@@ -180,6 +180,6 @@ class Aerodynamics () :
 
 
 #Интегратор
-    def Integrator (self,F,dt):
-        V_new=self.V+F*dt
+    def Integrator (self,dt):
+        V_new=self.V+F_sam*dt
         return V_new
