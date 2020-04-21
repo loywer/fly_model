@@ -1,10 +1,23 @@
 import numpy as np
 class Aerodynamics () :
     # Входные данные
-    def __init__(self,H,alpha,betta,kren,kurs,tang,dt):
+    def __init__(self,H,alpha,betta,ugl_eil,dt,koord):
+    #Входящие данные
+        self.alpha=alpha
+        self.betta=betta
+        self.ugl_eil = np.array([ugl_eil])    #Крен, тангаж, рыскание (Последовательность)
+        self.koord = np.array([koord])        # X,Y,Z    
+        self.H = np.array(0,H,0)
+        #Геометрия   
+        self.Sw = 16.2     #м2 #Площадь крыла
+        self.b = 10.91184  #м  #Размах
+        self.c = 1.49352   #м  #Хорда
+    #Сила притяжения
+        self.G = np.array([0,9,81,0])
     #Масса и инерция
         self.mass = 1043.2
         self.inertia = np.diag([948, 1346, 1967])
+    #Угловые ускорения 
         self.ang_vel=np.array([0,0,0])
     #Время
         self.dt = dt
@@ -57,18 +70,6 @@ class Aerodynamics () :
                         [0.00202, 0.001044, 0.00013, -0.0008, -0.00173, -0.002735, -0.0038, -0.004844, -0.00652, -0.00692, -0.00706, -0.0072],
                         [0.00332, 0.00172, 0.000214, -0.001263, -0.00284, -0.0045, -0.00622, -0.008, -0.01072, -0.01138, -0.01161, -0.01181],
                         [0.004321, 0.00224, 0.00028, -0.001645, -0.0037, -0.00586, -0.0081, -0.0104, -0.014, -0.01483, -0.01512, -0.0154]])
-    #Геометрия   
-        self.Sw = 16.2     #м2 #Площадь крыла
-        self.b = 10.91184  #м  #Размах
-        self.c = 1.49352   #м  #Хорда
-    #Сила притяжения
-        self.G = np.array([0,9,81,0])
-    #Входящие данные
-        self.alpha=alpha
-        self.betta=betta
-        self.kurs=kurs
-        self.tang=tang
-        self.kren=kren
     #Данные полученные из других программ   
     def atmos (self,ro):
         self.ro=set(ro)    #Плотность
@@ -158,9 +159,9 @@ class Aerodynamics () :
 
 #Матрица перехода из НСК в ССК
     def matrix_NSK_CCK (self):
-        self.matrix1 = np.array([[(np.cos(self.kurs))*(np.cos(self.tang) , np.sin(self.tang)) , ((-1)*(np.sin(self.kurs))*(np.cos(self.tang)))],
-            [(np.sin(self.kurs)*np.sin(self.kren)-np.cos(self.kurs)*np.sin(self.tang)*np.cos(self.kren)) , (np.cos(self.tang)*np.cos(self.kren)) , (np.cos(self.kurs)*np.sin(self.kren)+np.sin(self.kurs)*np.sin(self.tang)*np.cos(self.kren))],
-            [(np.sin(self.kurs)*np.cos(self.kren)-np.cos(self.kurs)*np.sin(self.tang)*np.sin(self.kren)) , (-1)*(np.cos(self.tang)*np.sin(self.kren)) , (np.cos(self.kurs)*np.cos(self.kren)+np.sin(self.kurs)*np.sin(self.tang)*np.sin(self.kren))]])
+        self.matrix1 = np.array([[(np.cos(self.ugl_eil[2]))*(np.cos(self.ugl_eil[1]) , np.sin(self.ugl_eil[1])) , ((-1)*(np.sin(self.ugl_eil[2]))*(np.cos(self.ugl_eil[1])))],
+            [(np.sin(self.ugl_eil[2])*np.sin(self.ugl_eil[0])-np.cos(self.ugl_eil[2])*np.sin(self.ugl_eil[1])*np.cos(self.ugl_eil[0])) , (np.cos(self.ugl_eil[1])*np.cos(self.ugl_eil[0])) , (np.cos(self.ugl_eil[2])*np.sin(self.ugl_eil[0])+np.sin(self.ugl_eil[2])*np.sin(self.ugl_eil[1])*np.cos(self.ugl_eil[0]))],
+            [(np.sin(self.ugl_eil[2])*np.cos(self.ugl_eil[0])-np.cos(self.ugl_eil[2])*np.sin(self.ugl_eil[1])*np.sin(self.ugl_eil[0])) , (-1)*(np.cos(self.ugl_eil[1])*np.sin(self.ugl_eil[0])) , (np.cos(self.ugl_eil[2])*np.cos(self.ugl_eil[0])+np.sin(self.ugl_eil[2])*np.sin(self.ugl_eil[1])*np.sin(self.ugl_eil[0]))]])
 
 #Матрица перехода из СкСК в ССК
     def matrix_CkCK_CCK (self):
@@ -174,17 +175,30 @@ class Aerodynamics () :
         self.F_sam=(self.F + self.P / self.mass) - self.G_new
 
 #Функция нахождения новых альфа и бетта
-    def alpha_betta_new (self):
-        self.alpha_new = np.arctan(self.V[0]/self.V[1])
-        self.betta_new = np.arctan(self.V[0]/self.V[2])
-
+#    def alpha_betta_new (self):
+#        self.alpha_new = np.arctan(self.V[0]/self.V[1])
+#        self.betta_new = np.arctan(self.V[0]/self.V[2])
 
 #Интегратор для скоростей
     def Integrator (self):
-        V_new=self.V+self.F_sam * self.dt
-        return V_new
+        self.V_new=self.V+self.F_sam * self.dt
 
 #Интегратор для ускорений
     def Angular_vel(self):
-        ang_vel_new = self.ang_vel + (self.M-np.dot(self.ang_vel,(self.ang_vel.dot(self.inertia)))).dot(np.inv(self.inertia)) * self.dt
-        return ang_vel_new
+        self.ang_vel_new = np.array(self.ang_vel + (self.M-np.dot(self.ang_vel,(self.ang_vel.dot(self.inertia)))).dot(np.inv(self.inertia)) * self.dt)
+
+#Функция нахождения новых альфа и бетта
+    def alpha_betta_new (self):
+        alpha_new = np.arctan(self.V_new[0]/self.V_new[1])
+        betta_new = np.arctan(self.V_new[0]/self.V_new[2])
+        return alpha_new, betta_new
+
+# Получение новых углов тангажа, крена и курса
+    def Ugl_Eilera_new (self):
+        ugl_eil_new = self.ugl_eil + (self.ang_vel_new.dot((self.matrix1).T))*self.dt
+        return ugl_eil_new
+    
+# Получение новых координат
+    def koord_new (self):
+        koord_new = (self.koord + (self.V_new.dot((self.matrix1).T))*self.dt) + self.H
+        return koord_new
