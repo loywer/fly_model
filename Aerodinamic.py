@@ -1,12 +1,13 @@
 import numpy as np
-from numpy import linalg as LA
 class Aerodynamics () :
     # Входные данные
-    def __init__(self,H,alpha,betta,kren,kurs,tang):
+    def __init__(self,H,alpha,betta,kren,kurs,tang,dt):
     #Масса и инерция
         self.mass = 1043.2
         self.inertia = np.diag([948, 1346, 1967])
         self.ang_vel=np.array([0,0,0])
+    #Время
+        self.dt = dt
     #Аэродинамика    
         self.alpha_1 =np.rad2deg(np.array([-7.5,-5,-2.5,0,2.5,5,7.5,10,15,17,18,19.5])) #рад
         self.betta_1 = np.rad2deg(np.array([0,1,2,3,4,5,6,7,8,9,10,11]))  #рад
@@ -153,8 +154,7 @@ class Aerodynamics () :
         Mx = moment[0] * self.ro * self.b *(self.V_sr**2) * self.Sw/2
         My = moment[1] * self.ro * self.c *(self.V_sr**2) * self.Sw/2
         Mz = moment[2] * self.ro * self.b *(self.V_sr**2) * self.Sw/2
-        M = np.array([Mx,My,Mz])
-        return M
+        self.M = np.array([Mx,My,Mz])
 
 #Матрица перехода из НСК в ССК
     def matrix_NSK_CCK (self):
@@ -179,7 +179,12 @@ class Aerodynamics () :
         self.betta_new = np.arctan(self.V[0]/self.V[2])
 
 
-#Интегратор
-    def Integrator (self,dt):
-        V_new=self.V+self.F_sam * dt
+#Интегратор для скоростей
+    def Integrator (self):
+        V_new=self.V+self.F_sam * self.dt
         return V_new
+
+#Интегратор для ускорений
+    def Angular_vel(self):
+        ang_vel_new = self.ang_vel + (self.M-np.dot(self.ang_vel,(self.ang_vel.dot(self.inertia)))).dot(np.inv(self.inertia)) * self.dt
+        return ang_vel_new
