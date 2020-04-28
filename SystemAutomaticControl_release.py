@@ -4,12 +4,15 @@ from matplotlib import pyplot as plt
 
 #eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
 dt = 0.02
-k_elev = 0.01
-k_eleron = 3.1
+
+kp_elev = 1
+ki_elev = 0.01
+
+kp_eleron = 2
 
 t = 0
-T_elev = 20
-T_eleron = 2.7 
+T_elev = 5
+T_eleron = 2.1
 
 class Control:
 
@@ -37,9 +40,17 @@ class Control:
         #self.ny_now = get_ny(self.elev_new) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
         #self.elev_new = self.elev_new + k_elev * (ny_spec - ny_now) # получение отклонения рулей высоты
         #self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * (1 - np.exp(-dt/T_elev))) # получение отклонения рулей высоты
-        self.transition_function = self.aperiodic_link(T_elev)
+        """
         self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * self.transition_function)
+        self.transition_function = self.aperiodic_link(T_elev)
+        """
         #elev_new =  0.1 * (ny_spec - ny_now) # получение отклонения рулей высоты
+
+        self.transition_function_elev = self.aperiodic_link(T_elev)
+        self.delta_ny = ny_spec - ny_now
+        self.elev_spec = self.delta_ny * (ki_elev/dt + kp_elev)
+        #delta_elev = elev_spec - elev_new
+        self.elev_new = self.elev_new + self.elev_spec * self.transition_function_elev
 
         if (self.elev_new * 180.0/np.pi >= 26) :
              self.elev_new = 26/180.0*np.pi
@@ -58,8 +69,17 @@ class Control:
         #self.eleron_now = k_eleron * (gamma_spec - gamma_now) - 3*w0
         #self.eleron_now = k_eleron * (gamma_spec - gamma_now) * (1 - np.exp(-dt/T_eleron)) - 3*w0
 
+        """
         self.transition_function = self.aperiodic_link(T_eleron)
-        self.eleron_now = k_eleron * (gamma_spec - gamma_now) * self.transition_function(T_eleron) - 3*w0
+        self.eleron_now = kp_eleron * (gamma_spec - gamma_now) * self.transition_function(T_eleron) - 3*w0
+        """
+
+        self.transition_function_eleron = self.aperiodic_link(T_eleron)
+        self.delta_gamma = gamma_spec - gamma_now
+        self.eleron_spec = self.delta_gamma * kp_eleron - 3*w0
+        #self.delta_eleron = self.eleron_spec - self.eleron_now
+        #self.eleron_now = self.eleron_spec + self.delta_eleron * self.transition_function_eleron
+        self.eleron_now = self.eleron_spec + self.eleron_spec * self.transition_function_eleron
 
         # t == dt
 
