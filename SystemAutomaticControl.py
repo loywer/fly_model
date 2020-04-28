@@ -38,9 +38,11 @@ def get_elev_and_ny_new (ny_spec) :
     ny_now = 0 # начальное значение перегрузки
     elev_new = 0 # начальное положение угла руля высоты
      
-    k = 3
+    kp = 1
+    ki = 0.01
+    
     t = 0
-    T = 3.5
+    T = 5
 
     #while ((abs(ny_now - ny_spec) > eps_ny) and (t <= 100)) :
     while (t <= 20) :
@@ -58,7 +60,11 @@ def get_elev_and_ny_new (ny_spec) :
         #elev_new = elev_new + k * (ny_spec - ny_now) # получение отклонения рулей высоты
         #elev_new = elev_new + ((ny_spec - ny_now) * k * (1 - np.exp(-t/T))) # получение отклонения рулей высоты
         transition_function = aperiodic_link(T)
-        elev_new = elev_new + ((ny_spec - ny_now) * k * transition_function)
+        delta_ny = ny_spec - ny_now
+        elev_spec = delta_ny * (ki/dt + kp)
+        #delta_elev = elev_spec - elev_new
+        elev_new = elev_new + elev_spec * transition_function
+        
 
         if (elev_new * 180.0/np.pi >= 26) :
             elev_new = 26/180.0*np.pi
@@ -88,10 +94,11 @@ def get_GammaAngle_and_eleron_now (gamma_spec) :
     eleron_now = 0.0 # начальное положение элерона
     gamma_now = 0 # начальный угол крена самолета
     
-    k = 250
+    #k = 250
+    kp = 2
     t = 0
     dt = 0.02
-    T = 2.5
+    T = 2.1
 
     #while ((abs(gamma_spec - gamma_now) > 0.01) and (t <= 20)) :
     while  (t <= 10):
@@ -108,8 +115,16 @@ def get_GammaAngle_and_eleron_now (gamma_spec) :
 
         #eleron_now = k*(gamma_spec - gamma_now) - 3*w0
         #eleron_now = k*(gamma_spec - gamma_now) * (1 - np.exp(-t/T)) - 3*w0
+        """
         transition_function = aperiodic_link(T)
         eleron_now =  k*(gamma_spec - gamma_now) * transition_function - 3*w0 # получение отклонения рулей высоты
+        """
+        transition_function = aperiodic_link(T)
+        delta_gamma = gamma_spec - gamma_now
+        eleron_spec = delta_gamma * kp - 3*w0
+        #delta_eleron = eleron_spec - eleron_now
+        eleron_now = eleron_spec + eleron_spec * transition_function
+        
         #print ("eleron_now = ", eleron_now)
 
         if (eleron_now * 180.0/np.pi >= 20) :
