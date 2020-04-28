@@ -65,8 +65,8 @@ class Engine(object):
     # Функция вычисления крутящего момента двигателя
     def torque(self, omega, spec_speed):
         tractive_power = self.get_tractive_power(omega, spec_speed)
-        param = [7023.52273*tractive_power[0]/omega
-        array_moment = np.array(param, 0, 0])
+        param = (7023.52273*tractive_power[0])/omega
+        array_moment = np.array([param, 0, 0])
         return array_moment
 
     # Функция вывода значений
