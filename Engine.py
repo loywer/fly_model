@@ -32,8 +32,8 @@ class Engine(object):
         self.integral_result = 0
     
     # Функция получения входных данных
-    def Set_data(self, curren_speed, spec_speed, AirDensity):
-        self.curren_speed = curren_speed
+    def Set_data(self, current_speed, spec_speed, AirDensity):
+        self.current_speed = current_speed
         self.spec_speed = spec_speed
         self.air_density = AirDensity
     
@@ -71,7 +71,7 @@ class Engine(object):
 
     # Функция вывода значений
     def Get_data(self):
-        sp_omega = self.spec_omega(self.spec_speed, self.curren_speed)
+        sp_omega = self.spec_omega(self.spec_speed, self.current_speed)
         thrust = self.get_tractive_power(sp_omega, self.current_speed)
         moment = self.torque(sp_omega, self.spec_speed)
         return thrust, moment
