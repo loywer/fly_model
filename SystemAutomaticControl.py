@@ -37,15 +37,17 @@ def get_elev_and_ny_new (ny_spec) :
      
     ny_now = 0 # начальное значение перегрузки
     elev_new = 0 # начальное положение угла руля высоты
+    elev_spec = 0
      
-    kp = 1
-    ki = 0.01
+    kp = 0.06
+    ki = 0.03
     
     t = 0
     T = 5
+    I = 0
 
     #while ((abs(ny_now - ny_spec) > eps_ny) and (t <= 100)) :
-    while (t <= 20) :
+    while (t <= 5) :
     #while (ny_now != ny_spec) :
     
         array_t.append(t)
@@ -61,9 +63,13 @@ def get_elev_and_ny_new (ny_spec) :
         #elev_new = elev_new + ((ny_spec - ny_now) * k * (1 - np.exp(-t/T))) # получение отклонения рулей высоты
         transition_function = aperiodic_link(T)
         delta_ny = ny_spec - ny_now
-        elev_spec = delta_ny * (ki/dt + kp)
+        #elev_spec = delta_ny * (ki/dt + kp)
+        I = I + delta_ny * (ki*dt)
+        #elev_new = elev_new + I + delta_ny * kp
+        elev_spec = elev_spec + I + delta_ny * kp
+        """I (t — 1) + Ki * e (t)"""
         #delta_elev = elev_spec - elev_new
-        elev_new = elev_new + elev_spec * transition_function
+        elev_new = elev_spec + elev_spec * transition_function
         
 
         if (elev_new * 180.0/np.pi >= 26) :
