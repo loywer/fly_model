@@ -21,13 +21,13 @@ c = 1.49352   #м  #Хорда
 G = np.array([0,-9.81,0])
 #Масса и инерция
 mass = 1043.2
-inertia = np.diag([948, 1346, 1967])
+inertia = (np.diag([948, 1346, 1967]))*1.3
 w = np.array([0,0,0])
 #Аэродинамика    
-alpha_1 =np.rad2deg(np.array([-7.5,-5,-2.5,0,2.5,5,7.5,10,15,17,18,19.5])) #рад
-betta_1 = np.rad2deg(np.array([-15,-12.5,-10,-5,-2.5,0,2.5,5,7.5,10,12.5,15]))  #рад
-deltaElev = np.rad2deg(np.array([-26, -20, -10, -5, 0, 7.5, 15, 22.5, 28]))  #рад
-deltaAile = np.rad2deg(np.array([-15, -10, -5, -2.5, 0, 5, 10, 15, 20])) #рад
+alpha_1 = np.deg2rad(np.array([-7.5,-5,-2.5,0,2.5,5,7.5,10,15,17,18,19.5])) #рад
+betta_1 = np.deg2rad(np.array([-15,-12.5,-10,-5,-2.5,0,2.5,5,7.5,10,12.5,15]))  #рад
+deltaElev = np.deg2rad(np.array([-26, -20, -10, -5, 0, 7.5, 15, 22.5, 28])) #рад
+deltaAile = np.deg2rad(np.array([-15, -10, -5, -2.5, 0, 5, 10, 15, 20])) #рад
 #Входные данные для Cx
 CD = np.array([0.044,0.034,0.03,0.03,0.036,0.048,0.067,0.093,0.15,0.169,0.177,0.184])
 CDDeltaElev = np.array([[0.0135,0.0119,0.0102,0.00846,0.0067,0.0049,0.00309,0.00117,-0.0033,-0.00541,-0.00656,-0.00838],
@@ -203,14 +203,14 @@ class Aerodynamics:
 #Интегратор
     def Integrator (self,F,M,F_sam,matrix1):
         
-        n = ((F + self.P) / (mass *(-1)* ((matrix1.dot(G))[1])))
-        V = self.V + (np.dot(self.V,self.w) + F_sam) * self.dt
+        n = (F + self.P) / (mass * 9.81)
+        V = self.V + (np.cross(self.w,self.V) + F_sam) * self.dt
         V_modul = self.Mod_V()
-        w = self.w + np.dot(np.linalg.inv(inertia),M - np.dot(self.w,np.dot(inertia,self.w)))* self.dt
+        w = self.w + np.dot(np.linalg.inv(inertia),M - np.cross(self.w,np.dot(self.w,inertia)))* self.dt
         angl = self.ugl_eil + np.dot(matrix1.T,self.w)*self.dt
         koord = self.koord + np.dot(matrix1.T,V)*self.dt
-        a = (np.dot(self.V,self.w) + F_sam)
-        e = np.dot(np.linalg.inv(inertia),M - np.dot(self.w,np.dot(inertia,self.w)))
+        a = (np.cross(self.w,self.V) + F_sam)
+        e = np.dot(np.linalg.inv(inertia),M - np.cross(self.w,np.dot(self.w,inertia)))
         betta = np.arcsin(V[2]/V_modul)
         if V[0] >= 0:
             alpha = (-1)*np.arcsin(V[1])/(np.sqrt(V[0]**2+V[1]**2))
@@ -234,22 +234,21 @@ class Aerodynamics:
         return V_sr,angl,koord,V,a,n,w,e,alpha,betta
 
 # Начальные данные
-V=np.array([50,0,0])
-alpha = 0.17
-betta = 0.035
+V=np.array([20,0,0])
+alpha = 0.017
+betta = 0
 dt = 0.02
 koord =np.array ([0,500,0])
 ugl_eil = np.array([0,0,0])
 ro = 1.225
-DeltaElev = 0
-DeltaRud = 0.17
+DeltaElev = 0.17
+DeltaRud = 0
 DeltaAile = 0
-P = 50
+P = 20
 w = np.array([0,0,0])
 
 #Обращение к классу
 Aerodynamics = Aerodynamics ()
-
 t = 0
 V_array.append(V)
 w_array.append(w)
@@ -258,7 +257,7 @@ koord_array.append(koord)
 #alpha_array.append(alpha)
 #betta_array.append(betta)
 
-while (t<=1.5):
+while (t<=8):
     #Aerodynamics.Set_data (alpha_array[-1],betta_array[-1],angl_array[-1],dt,koord_array[-1],ro,V_array[-1],DeltaElev,DeltaRud,DeltaAile,P,w_array[-1])
     Aerodynamics.Set_data (alpha,betta,angl_array[-1],dt,koord_array[-1],ro,V_array[-1],DeltaElev,DeltaRud,DeltaAile,P,w_array[-1])
     V_sr = Aerodynamics.Get_data ()[0]
