@@ -1,318 +1,224 @@
 import numpy as np
-from math import sin,cos
+from model_function_upr import *
 from matplotlib import pyplot as plt
-#------------------------------------------------Начальные данные-------------------------------------------------------
-V_array = []
-V_mod_array = []
-t_array = []
-w_array = []
-angl_array = []
-koord_array = []
-alpha_array = []
-betta_array = []
-H_array = []
-X_array = []
-tang_array = []
-#Геометрия   
-Sw = 16.2     #м2 #Площадь крыла
-b = 10.91184  #м  #Размах
-c = 1.49352   #м  #Хорда
-#Сила притяжения
-G = np.array([0,-9.81,0])
-#Масса и инерция
-mass = 1043.2
-inertia = np.diag([948, 1346, 1967])
-w = np.array([0,0,0])
-#Аэродинамика    
-alpha_1 =np.rad2deg(np.array([-7.5,-5,-2.5,0,2.5,5,7.5,10,15,17,18,19.5])) #рад
-betta_1 = np.rad2deg(np.array([-15,-12.5,-10,-5,-2.5,0,2.5,5,7.5,10,12.5,15]))  #рад
-deltaElev = np.rad2deg(np.array([-26, -20, -10, -5, 0, 7.5, 15, 22.5, 28]))  #рад
-deltaAile = np.rad2deg(np.array([-15, -10, -5, -2.5, 0, 5, 10, 15, 20])) #рад
-#Входные данные для Cx
-CD = np.array([0.044,0.034,0.03,0.03,0.036,0.048,0.067,0.093,0.15,0.169,0.177,0.184])
-CDDeltaElev = np.array([[0.0135,0.0119,0.0102,0.00846,0.0067,0.0049,0.00309,0.00117,-0.0033,-0.00541,-0.00656,-0.00838],
-                    [0.0121,0.0106,0.00902,0.00738,0.00574,0.00406,0.00238,0.00059,-0.00358,-0.00555,-0.00661,-0.00831],
-                    [0.00651,0.00552,0.00447,0.00338,0.00229,0.00117,0.0000517,-0.00114,-0.00391,-0.00522,-0.00593,-0.00706],
-                    [0.00249,0.002,0.00147,0.000931,0.000384,-0.000174,-0.000735,-0.00133,-0.00272,-0.00337,-0.00373,-0.00429],
-                    [0,0,0,0,0,0,0,0,0,0,0,0],
-                    [-0.00089,-0.00015,0.00064,0.00146,0.00228,0.00311,0.00395,0.00485,0.00693,0.00791,0.00844,0.00929],
-                    [0.00121,0.00261,0.00411,0.00566,0.00721,0.00879,0.0104,0.0121,0.016,0.0179,0.0189,0.0205],
-                    [0.00174,0.00323,0.00483,0.00648,0.00814,0.00983,0.0115,0.0133,0.0175,0.0195,0.0206,0.0223],
-                    [0.00273,0.00438,0.00614,0.00796,0.0098,0.0117,0.0135,0.0155,0.0202,0.0224,0.0236,0.0255]])
-#Входные данные для Cy
-CL = np.array([-0.571,-0.321,-0.083,0.148,0.392,0.65,0.918,1.195,1.659,1.789,1.84,1.889])
-CLQ = np.array([7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282,7.282])
-CLDdeltaElev = np.array([-0.132,-0.123,-0.082,-0.041,0,0.061,0.116,0.124,0.137])   
-#Входные данные для Cz
-CYBeta = np.array([-0.268,-0.268,-0.268,-0.268,-0.268,-0.268,-0.268,-0.268,-0.268,-0.268,-0.268,-0.268])
-CYp = np.array([-0.032, -0.0372, -0.0418, -0.0463, -0.051, -0.0563, -0.0617, -0.068, -0.0783, -0.0812, -0.0824, -0.083])
-CYr = np.array([0.2018, 0.2054, 0.2087, 0.2115, 0.2139, 0.2159, 0.2175, 0.2187, 0.2198, 0.2198, 0.2196, 0.2194])
-CYDeltaRud = (-1)*np.array([0.561, 0.561, 0.561, 0.561, 0.561, 0.561, 0.561, 0.561, 0.561, 0.561, 0.561, 0.561])
-#Входные данные для mx
-Clbeta=np.array([-0.178, -0.186, -0.1943, -0.202, -0.2103, -0.219, -0.2283, -0.2376, -0.2516, -0.255, -0.256, -0.257])
-Clp=np.array([-0.4968, -0.4678, -0.4489, -0.4595, 0.487, -0.5085, -0.5231, -0.4916, -0.301, -0.203, -0.1498, -0.0671])
-Clr=np.array([-0.09675, -0.05245, -0.01087, 0.02986, 0.07342, 0.1193, 0.1667, 0.2152, 0.2909, 0.3086, 0.3146, 0.3197])
-ClDeltaRud=(-1)*np.array([0.091, 0.082, 0.072, 0.063, 0.053, 0.0432, 0.0333, 0.0233, 0.0033, -0.005, -0.009, -0.015])
-ClDeltaAile=np.array([-0.078052, -0.059926, -0.036422, -0.018211, 0, 0.018211, 0.036422, 0.059926, 0.078052])
-#Входные данные для my
-CM=np.array([0.0597, 0.0498, 0.0314, 0.0075, -0.0248, -0.068, -0.1227, -0.1927, -0.3779, -0.4605, -0.5043, -0.5496])
-CMq=np.array([-6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232, -6.232])
-CMDeltaElev=np.array([0.3302, 0.3065, 0.2014, 0.1007, -0.0002, -0.1511, -0.2863, -0.3109, -0.345])
-#Входные данные для mz
-CNbeta=np.array([0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126, 0.0126])
-CNp=np.array([0.03, 0.016, 0.00262, -0.0108, -0.0245, -0.0385, -0.0528, -0.0708, -0.113, -0.1284, -0.1356, -0.1422])
-CNr=np.array([-0.028, -0.027, -0.027, -0.0275, -0.0293, -0.0325, -0.037, -0.043, -0.05484, -0.058, -0.0592, -0.06015])
-CNDeltaRud=(-1)*np.array([-0.211, -0.215, -0.218, -0.22, -0.224, -0.226, -0.228, -0.229, -0.23, -0.23, -0.23, -0.23])
-CNDeltaAile=np.array([[-0.004321, -0.002238, -0.0002783, 0.001645, 0.003699, 0.005861, 0.008099, 0.01038, 0.01397, 0.01483, 0.01512, 0.01539],
-                [-0.003318, -0.001718, -0.0002137, 0.001263, 0.00284, 0.0045, 0.006218, 0.00797, 0.01072, 0.01138, 0.01161, 0.01181],
-                [-0.002016, -0.001044, -0.000123, 0.0007675, 0.00173, 0.002735, 0.0038, 0.004844, 0.00652, 0.00692, 0.00706, 0.0072],
-                [-0.00101, -0.000522, -0.0000649, 0.000384, 0.000863, 0.00137, 0.0019, 0.00242, 0.00326, 0.00346, 0.00353, 0.0036],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [0.00101, 0.00052, 0.000065, -0.000384, -0.00086, -0.0014, -0.002, -0.002422, -0.00326, -0.00346, -0.00353, -0.0036],
-                [0.00202, 0.001044, 0.00013, -0.0008, -0.00173, -0.002735, -0.0038, -0.004844, -0.00652, -0.00692, -0.00706, -0.0072],
-                [0.00332, 0.00172, 0.000214, -0.001263, -0.00284, -0.0045, -0.00622, -0.008, -0.01072, -0.01138, -0.01161, -0.01181],
-                [0.004321, 0.00224, 0.00028, -0.001645, -0.0037, -0.00586, -0.0081, -0.0104, -0.014, -0.01483, -0.01512, -0.0154]])
 
-#-----------------------------------------------------Реализация класса--------------------------------------------------------------
+array_elev = []     # массив значений отклонения руля (угол отклонения руля [град])
+array_ny_now = []   # массив значений перегрузок в данный момент времени
+array_ny_spec = []  # массив значений заданной перегрузки (постоянная)
 
-class Aerodynamics:
-    # Входные данные
-    def Set_data (self,alpha,betta,ugl_eil,dt,koord,ro,V,DeltaElev,DeltaRud,DeltaAile,P,w):
-    #Входящие данные
-        self.alpha=alpha
-        self.betta=betta
-        self.ugl_eil = ugl_eil    #Крен, тангаж, рыскание (Последовательность)
-        self.koord = koord        # X,Y,Z    
-        self.dt = dt
-        self.ro=ro    #Плотность
-        self.V=V
-        self.DeltaElev =DeltaElev 
-        self.DeltaRud=DeltaRud
-        self.DeltaAile = DeltaAile
-        self.P=np.array([P,0,0])
-        self.w = w
+array_t = []        # массив значений времени для рулей высоты
 
-    #Данные полученные из других программ   
-   # def atmos (self,ro):
-   #     self.ro=set(ro)    #Плотность
-   # def speed (self,V):
-   #     self.V=V
-   # def DeltaElev_vxod (self,DeltaElev):
-   #     self.DeltaElev =set(DeltaElev) 
-   # def DeltaRud_vxod (self,DeltaRud):
-   #     self.DeltaRud=set(DeltaRud)
-   # def DeltaAile_vxod (self,DeltaAile):
-   #     self.DeltaAile = set(DeltaAile)    
-   # def Tyaga_vxod (self,P):
-   #     self.P=np.array([P,0,0])
+array_time_eleron = []  # массив значений времени для элеронов
+array_eleron_now = []   # массив значений положения элерона
+array_gamma_now = []    # массив значений крена самолета
+array_gamma_spec = []   # заданный крен самолета
 
-#          ------------------------------------   Решение   --------------------------------------------------------------
-# Функция вычисление модуля скорости
-    def Mod_V (self):
-        V_sr=np.sqrt(self.V[0]**2+self.V[1]**2+self.V[2]**2)
-        return V_sr
-
-# Функция вычисляющая коэффициенты cx,cy,cz
-    def Aero_Forces_coeff (self,V_sr):
-    #Вычисление Cx
-        S=[]
-        for i in range(12):
-            CDDD = np.array(np.interp( self.DeltaElev, deltaElev, CDDeltaElev[:,i]))
-            S.append( CDDD)
-        S = np.asarray(S)      
-        CDD = np.interp(self.alpha, alpha_1, S)
-        cx_1 = np.interp(self.alpha, alpha_1, CD)
-        cx = CDD + cx_1
-    #Вычисление Cy
-        cy_1 = np.interp(self.alpha , alpha_1 , CL)
-        cy_2 = np.interp(self.alpha , alpha_1 , CLQ)
-        cy_3 = np.interp(self.DeltaElev , deltaElev , CLDdeltaElev)
-        cy = cy_1 +((c*cy_2*self.w[2])/(2 * V_sr)) + (cy_3 * self.DeltaElev)                   
-    #Вычисление Cz
-        cz_1 = np.interp(self.betta, betta_1, CYBeta) 
-        cz_2 = np.interp(self.alpha, alpha_1, CYp) 
-        cz_3 = np.interp(self.alpha, alpha_1, CYr)
-        cz_4 = np.interp(self.alpha, alpha_1, CYDeltaRud)
-        cz = (cz_1 * self.betta) + (b/(2*V_sr))*(cz_2 * self.w[0]+cz_3 * self.w[1]) + (cz_4*self.DeltaRud) 
-        koeff = np.array([cx,cy,cz])
-        return koeff
-
-#Вычисление аэродинамических сил
-    def Aero_Forces(self,koeff,V_sr):
-        Fx=(-1)*koeff[0] * self.ro * (V_sr**2) * (Sw / 2)
-        Fy=koeff[1] * self.ro * (V_sr**2) * (Sw / 2)
-        Fz=koeff[2] * self.ro * (V_sr**2) * (Sw / 2)
-        F=np.array([Fx,Fy,Fz])
-        return F
-
-#Вычисление коэффициентов аэродинамических моментов 
-    def Aero_Moment_coeff (self,V_sr):
-    #Вычисление mx
-        mx_1 = np.interp(self.alpha, alpha_1, Clbeta)
-        mx_2 = np.interp(self.alpha, alpha_1, Clp)
-        mx_3 = np.interp(self.alpha, alpha_1, Clr)
-        mx_4 = np.interp(self.alpha, alpha_1, ClDeltaRud)
-        mx_5 = np.interp(self.DeltaAile, deltaAile, ClDeltaAile)
-        mx = (mx_1 * self.betta) + (b/(2*V_sr))*(mx_2*self.w[0] + mx_3 * self.w[1]) + (mx_4 * self.DeltaRud) + (mx_5 * self.DeltaAile)    
-    #Вычисление my
-        my_1 = np.interp(self.alpha, alpha_1, CM)
-        my_2 = np.interp(self.alpha, alpha_1, CMq)
-        my_3 = np.interp(self.DeltaElev, deltaElev, CMDeltaElev)
-        my = (my_1 * self.alpha) + ((c / (2 * V_sr)) * (my_2 * self.w[2])) + (my_3 * self.DeltaElev)    
-    #Вычисление mz
-        mz_1 = np.interp(self.betta, betta_1, CNbeta)
-        mz_2 = np.interp(self.alpha, alpha_1, CNp)
-        mz_3 = np.interp(self.alpha, alpha_1, CNr)
-        mz_4 = np.interp(self.alpha, alpha_1, CNDeltaRud)
-        k = []
-        for i in range(12):
-            CNNN = np.array(np.interp(self.DeltaAile, deltaAile, CNDeltaAile[:,i]))
-            k.append(CNNN)
-        k = np.asarray(k)     
-        mz_5 = np.interp(self.alpha, alpha_1, k)
-        mz = (mz_1 * self.betta) + ((b/(2*V_sr)) * (mz_2*self.w[0] + mz_3*self.w[1])) + (mz_4 * self.DeltaRud) + (mz_5 * self.DeltaAile)   
-        moment = np.array([mx,my,mz])
-        return moment
-
-#Вычисление аэродинамических моментов
-    def Aero_Moment (self,moment,V_sr):
-        Mx = moment[0] * self.ro * b *(V_sr**2) * (Sw / 2)
-        My = moment[1] * self.ro * b *(V_sr**2) * (Sw / 2)
-        Mz = moment[2] * self.ro * c *(V_sr**2) * (Sw / 2)
-        M = np.array([Mx,My,Mz])
-        return M
-
-#Матрица перехода из НСК в ССК
-    def matrix_NSK_CCK (self):
-        matrix1= np.array([[cos(self.ugl_eil[2])*cos(self.ugl_eil[1]),sin(self.ugl_eil[1]),(-1.0)*sin(self.ugl_eil[2])*cos(self.ugl_eil[1])],
-[sin(self.ugl_eil[2])*sin(self.ugl_eil[0])-cos(self.ugl_eil[2])*sin(self.ugl_eil[1])*cos(self.ugl_eil[0]),cos(self.ugl_eil[1])*cos(self.ugl_eil[0]),cos(self.ugl_eil[2])*sin(self.ugl_eil[0])+sin(self.ugl_eil[2])*sin(self.ugl_eil[1])*cos(self.ugl_eil[0])],
-[sin(self.ugl_eil[2])*cos(self.ugl_eil[0])-cos(self.ugl_eil[2])*sin(self.ugl_eil[1])*sin(self.ugl_eil[0]),(-1.0)*cos(self.ugl_eil[1])*sin(self.ugl_eil[0]),cos(self.ugl_eil[2])*cos(self.ugl_eil[0])-sin(self.ugl_eil[2])*sin(self.ugl_eil[1])*sin(self.ugl_eil[0])]])
-        return matrix1
-#Матрица перехода из СкСК в ССК
-    def matrix_CkCK_CCK (self):
-        matrix2 = np.array([[(cos(self.alpha) * cos(self.betta)) , (sin(self.alpha)) , ((-1.0) * cos(self.alpha) * sin(self.betta))],
-                    [((-1.0) * sin(self.alpha) * cos(self.betta)) , (cos(self.betta)) , (sin(self.alpha) * sin(self.betta))],
-                    [(sin(self.betta)) , 0 , (cos(self.betta))]])
-        return matrix2
-
-#Функция вычисляющая силы действующие на самолет
-    def F_samolet (self,F,matrix1,matrix2):
-        F_sam= ((np.dot(matrix2,F) + self.P) / mass) + matrix1.dot(G)
-        return F_sam
-
-#Интегратор
-    def Integrator (self,F,M,F_sam,matrix1):
-        
-        n = ((F + self.P) / (mass *(-1)* ((matrix1.dot(G))[1])))
-        V = self.V + (np.dot(self.V,self.w) + F_sam) * self.dt
-        V_modul = self.Mod_V()
-        w = self.w + np.dot(np.linalg.inv(inertia),M - np.dot(self.w,np.dot(inertia,self.w)))* self.dt
-        angl = self.ugl_eil + np.dot(matrix1.T,self.w)*self.dt
-        koord = self.koord + np.dot(matrix1.T,V)*self.dt
-        a = (np.dot(self.V,self.w) + F_sam)
-        e = np.dot(np.linalg.inv(inertia),M - np.dot(self.w,np.dot(inertia,self.w)))
-        betta = np.arcsin(V[2]/V_modul)
-        if V[0] >= 0:
-            alpha = (-1)*np.arcsin(V[1])/(np.sqrt(V[0]**2+V[1]**2))
-        else:
-            alpha = (-1)*np.pi + np.arcsin(abs(V[1]))/(np.sqrt(V[0]**2+V[1]**2))*np.sign(V[1])
-        #alpha = np.arctan(V[0]/V[1])
-        #betta = np.arctan(V[0]/V[2])
-        return angl,koord,V,a,n,w,e,alpha,betta
-
-# Функция Get        
-    def Get_data (self):
-        V_sr = self.Mod_V()
-        coeff_f = self.Aero_Forces_coeff (V_sr)
-        F = self.Aero_Forces (coeff_f,V_sr)
-        coeff_m = self.Aero_Moment_coeff (V_sr)
-        M = self.Aero_Moment (coeff_m,V_sr)
-        matrix = self.matrix_NSK_CCK ()
-        matrix_1 = self.matrix_CkCK_CCK()
-        F_sam = self.F_samolet(F,matrix,matrix_1)
-        angl,koord,V,a,n,w,e,alpha,betta = self.Integrator (F,M,F_sam,matrix)
-        return V_sr,angl,koord,V,a,n,w,e,alpha,betta
-
-# Начальные данные
-V=np.array([50,0,0])
-alpha = 0.17
-betta = 0.035
+eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
 dt = 0.02
-koord =np.array ([0,500,0])
-ugl_eil = np.array([0,0,0])
-ro = 1.225
-DeltaElev = 0
-DeltaRud = 0.17
-DeltaAile = 0
-P = 50
-w = np.array([0,0,0])
 
-#Обращение к классу
-Aerodynamics = Aerodynamics ()
 
-t = 0
-V_array.append(V)
-w_array.append(w)
-angl_array.append(ugl_eil)
-koord_array.append(koord)
-#alpha_array.append(alpha)
-#betta_array.append(betta)
+def aperiodic_link (T) :
+    dt = 0.02
+    return (1 - np.exp(-dt/T))
 
-while (t<=1.5):
-    #Aerodynamics.Set_data (alpha_array[-1],betta_array[-1],angl_array[-1],dt,koord_array[-1],ro,V_array[-1],DeltaElev,DeltaRud,DeltaAile,P,w_array[-1])
-    Aerodynamics.Set_data (alpha,betta,angl_array[-1],dt,koord_array[-1],ro,V_array[-1],DeltaElev,DeltaRud,DeltaAile,P,w_array[-1])
-    V_sr = Aerodynamics.Get_data ()[0]
-    angl = Aerodynamics.Get_data ()[1]
-    koord = Aerodynamics.Get_data ()[2]
-    V = Aerodynamics.Get_data ()[3]
-    w = Aerodynamics.Get_data ()[6]
-    #alpha = Aerodynamics.Get_data ()[8]
-    #betta = Aerodynamics.Get_data ()[9]
-    if t ==0:
-        V_array.clear()
-        w_array.clear()
-        angl_array.clear()
-        koord_array.clear()
-        #alpha_array.clear()
-        #betta_array.clear()
+# Функция получения положения руля высоты и текущей перегрузки 
+#   ny_spec - заданное значение перегрузки   
+def get_elev_and_ny_new (ny_spec) :
+    
+    global array_elev
+    global array_ny_now
+    global array_ny_spec
+        
+    array_elev.clear()
+    array_ny_now.clear()
+    array_ny_spec.clear()
+    
+    array_t.clear()
+     
+    ny_now = 0 # начальное значение перегрузки
+    elev_new = 0 # начальное положение угла руля высоты
+    elev_spec = 0
+     
+    kp = 0.06
+    ki = 0.03
+    
+    t = 0
+    T = 5
+    I = 0
 
-    t_array.append(t)
-    V_array.append(V)
-    V_mod_array.append(V_sr)
-    w_array.append (w)
-    angl_array.append(angl)
-    koord_array.append(koord)
-    H_array.append(koord[1])
-    X_array.append(koord[0])
-    tang_array.append(angl[1])
-    #alpha_array.append(alpha)
-    #betta_array.append(betta)  
-    t=t+dt
+    #while ((abs(ny_now - ny_spec) > eps_ny) and (t <= 100)) :
+    while (t <= 5) :
+    #while (ny_now != ny_spec) :
+    
+        array_t.append(t)
+        array_elev.append(elev_new*180.0/np.pi)
+        array_ny_now.append(ny_now)
+        array_ny_spec.append(ny_spec)
 
-#Вывод графиков
+        ny_now = get_ny(elev_new) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
+        #elev_new = get_ny_2(Cy_now) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
+        
+        #elev_new =  0.1 * (ny_spec - ny_now) # получение отклонения рулей высоты
+        #elev_new = elev_new + k * (ny_spec - ny_now) # получение отклонения рулей высоты
+        #elev_new = elev_new + ((ny_spec - ny_now) * k * (1 - np.exp(-t/T))) # получение отклонения рулей высоты
+        transition_function = aperiodic_link(T)
+        delta_ny = ny_spec - ny_now
+        #elev_spec = delta_ny * (ki/dt + kp)
+        I = I + delta_ny * (ki*dt)
+        #elev_new = elev_new + I + delta_ny * kp
+        elev_spec = elev_spec + I + delta_ny * kp
+        """I (t — 1) + Ki * e (t)"""
+        #delta_elev = elev_spec - elev_new
+        elev_new = elev_spec + elev_spec * transition_function
+        
+
+        if (elev_new * 180.0/np.pi >= 26) :
+            elev_new = 26/180.0*np.pi
+
+        if (elev_new * 180.0/np.pi <= -28) :
+            elev_new = -28/180.0*np.pi
+    
+        t = t + dt
+
+    return elev_new, array_elev
+
+# Функция получения положения элерона и крена самолета 
+#   gamma_spec - заданное значение крена самолета (желаемое)
+def get_GammaAngle_and_eleron_now (gamma_spec) :
+    
+    global array_time_eleron
+    
+    global array_eleron_now
+    global array_gamma_now
+    global array_gamma_spec
+
+    array_eleron_now.clear()
+    array_gamma_now.clear()
+    array_gamma_spec.clear()
+    array_time_eleron.clear()
+
+    eleron_now = 0.0 # начальное положение элерона
+    gamma_now = 0 # начальный угол крена самолета
+    
+    #k = 250
+    kp = 2
+    t = 0
+    dt = 0.02
+    T = 2.1
+
+    #while ((abs(gamma_spec - gamma_now) > 0.01) and (t <= 20)) :
+    while  (t <= 10):
+        
+        array_time_eleron.append(t)
+        array_eleron_now.append(eleron_now*180.0/np.pi)
+        array_gamma_now.append(gamma_now*180.0/np.pi)
+        array_gamma_spec.append(gamma_spec*180.0/np.pi)
+
+        #print ("gamma = ", gamma)
+
+        gamma_now, w0 = get_gamma(eleron_now)
+        #print ("gamma_now = ", gamma_now)
+
+        #eleron_now = k*(gamma_spec - gamma_now) - 3*w0
+        #eleron_now = k*(gamma_spec - gamma_now) * (1 - np.exp(-t/T)) - 3*w0
+        """
+        transition_function = aperiodic_link(T)
+        eleron_now =  k*(gamma_spec - gamma_now) * transition_function - 3*w0 # получение отклонения рулей высоты
+        """
+        transition_function = aperiodic_link(T)
+        delta_gamma = gamma_spec - gamma_now
+        eleron_spec = delta_gamma * kp - 3*w0
+        #delta_eleron = eleron_spec - eleron_now
+        eleron_now = eleron_spec + eleron_spec * transition_function
+        
+        #print ("eleron_now = ", eleron_now)
+
+        if (eleron_now * 180.0/np.pi >= 20) :
+            eleron_now = 20/180.0*np.pi
+
+        if (eleron_now * 180.0/np.pi <= -15) :
+            eleron_now = -15/180.0*np.pi
+
+        t = t + dt
+    return eleron_now, gamma_now
+
+# Функция записи в файл полученных результатов ny и elev
+#   filename - имя файла для записи
+#   ny_spec - заданное значение перегрузки 
+def WriteToFile_ny_elev (filename, ny_spec) :
+   
+    get_elev_and_ny_new (ny_spec)
+
+    np.savetxt(filename, 
+        np.column_stack((array_t, array_elev, array_ny_now)), 
+        fmt = '%5.2f | %8.5f | %8.5f', 
+        header = ('Для перегрузки = ' + str(ny_spec) + '\nt   | elev_new |  ny_now\n-------------------------'), 
+        delimiter = ' | ')
+    
+    return
+
+# Функция записи в файл полученных результатов eleron и gamma
+#   filename - имя файла для записи
+#   gamma_spec - желаеиый угол крена 
+def WriteToFile_eleron_gamma (filename, gamma_spec) :
+   
+    get_GammaAngle_and_eleron_now (gamma_spec)
+   
+    np.savetxt(filename, 
+        np.column_stack((array_time_eleron, array_eleron_now, array_gamma_now)), 
+        fmt = '%5.2f | %10.5f | %8.5f', 
+        header = ('Желаемый угол крена = ' + str(gamma_spec*180.0/np.pi) + '\nt   | eleron_now | gamma_now\n-----------------------------'), 
+        delimiter = ' | ')
+    
+    return
 
 fig1 = plt.figure()
-plt.title("Изменение модуля скорости")
+plt.title("Изменение отклонения руля высоты")
 plt.xlabel ("Время наблюдения, [c]")
-plt.ylabel ("модуль скорости, [м/с]")
-plt.plot (t_array,V_mod_array)
+plt.ylabel ("Угол текущего положения рулей, [град]")
+
+#for i in range(1, 6, 2): # цикл от 1 до 5 с шагом 2, 
+    #i - значения перегрузки
+get_elev_and_ny_new (0.5)
+plt.plot (array_t, array_elev, label = 'Заданная перегрузка = ' + str(0.5))
+    #print("\ni = ", i)
+
 plt.legend()
 plt.grid()
+
 
 fig2 = plt.figure()
-plt.title("Изменение Высоты")
+get_elev_and_ny_new (0.5)
+plt.title("Изменение значения перегрузки")
 plt.xlabel ("Время наблюдения, [c]")
-plt.ylabel ("Высота, [м]")
-plt.plot (t_array,H_array)
+plt.ylabel ("Перегрузка, []")
+plt.plot (array_t, array_ny_now, label = 'Текущая перегрузка')
+plt.plot (array_t, array_ny_spec, label = 'Заданная перегрузка')
 plt.legend()
 plt.grid()
+
 
 fig3 = plt.figure()
-plt.title("Изменение угла тангажа")
+get_GammaAngle_and_eleron_now (0.52)
+plt.title("ЭЛЕРОНЫ")
 plt.xlabel ("Время наблюдения, [c]")
-plt.ylabel ("Угол тангажа, [рад]")
-plt.plot (t_array,tang_array)
+plt.ylabel ("Угол отклонения элеронов, [град]")
+plt.plot (array_time_eleron, array_eleron_now)
+plt.grid()
+
+
+fig4 = plt.figure()
+#get_GammaAngle_and_eleron_now (0.52)
+plt.title("КРЕН")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Крен самолета, [град]")
+plt.plot (array_time_eleron, array_gamma_now, label = 'Текущий крен самолета')
+plt.plot (array_time_eleron, array_gamma_spec, label = 'Заданный крен самолета')
 plt.legend()
 plt.grid()
 
-plt.show()   
+plt.show()
+
+WriteToFile_ny_elev ("output_ny_elev1.txt", 1)
+WriteToFile_ny_elev ("output_ny_elev3.txt", 3)
+WriteToFile_ny_elev ("output_ny_elev5.txt", 5)
