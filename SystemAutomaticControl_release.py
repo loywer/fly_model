@@ -5,14 +5,17 @@ from matplotlib import pyplot as plt
 #eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
 dt = 0.02
 
-kp_elev = 1
-ki_elev = 0.01
+kp_elev = 0.06
+ki_elev = 0.03
 
 kp_eleron = 2
 
 t = 0
 T_elev = 5
 T_eleron = 2.1
+
+I = 0
+elev_spec = 0
 
 class Control:
 
@@ -37,20 +40,15 @@ class Control:
     #   ny_spec - заданное значение перегрузки 
     def get_elev_and_ny_new (self, ny_spec, ny_now) :
      
-        #self.ny_now = get_ny(self.elev_new) / ACCELERATION_OF_GRAVITY # получение значения перегрузки в данный момент времени
-        #self.elev_new = self.elev_new + k_elev * (ny_spec - ny_now) # получение отклонения рулей высоты
-        #self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * (1 - np.exp(-dt/T_elev))) # получение отклонения рулей высоты
-        """
-        self.elev_new = self.elev_new + ((ny_spec - ny_now) * k_elev * self.transition_function)
-        self.transition_function = self.aperiodic_link(T_elev)
-        """
-        #elev_new =  0.1 * (ny_spec - ny_now) # получение отклонения рулей высоты
+        global I
+        global elev_spec
 
         self.transition_function_elev = self.aperiodic_link(T_elev)
         self.delta_ny = ny_spec - ny_now
-        self.elev_spec = self.delta_ny * (ki_elev/dt + kp_elev)
+        I = I + self.delta_ny * (ki_elev*dt)
+        elev_spec = elev_spec + I + self.delta_ny * kp_elev
         #delta_elev = elev_spec - elev_new
-        self.elev_new = self.elev_new + self.elev_spec * self.transition_function_elev
+        self.elev_new = elev_spec + elev_spec * self.transition_function_elev
 
         if (self.elev_new * 180.0/np.pi >= 26) :
              self.elev_new = 26/180.0*np.pi
@@ -64,24 +62,11 @@ class Control:
     #   gamma_spec - заданное значение крена самолета (желаемое)
     def get_GammaAngle_and_eleron_now (self, gamma_spec, gamma_now, w0) :
            
-        #self.gamma_now, self.w0 = get_gamma(self.eleron_now)
-
-        #self.eleron_now = k_eleron * (gamma_spec - gamma_now) - 3*w0
-        #self.eleron_now = k_eleron * (gamma_spec - gamma_now) * (1 - np.exp(-dt/T_eleron)) - 3*w0
-
-        """
-        self.transition_function = self.aperiodic_link(T_eleron)
-        self.eleron_now = kp_eleron * (gamma_spec - gamma_now) * self.transition_function(T_eleron) - 3*w0
-        """
-
         self.transition_function_eleron = self.aperiodic_link(T_eleron)
         self.delta_gamma = gamma_spec - gamma_now
-        self.eleron_spec = self.delta_gamma * kp_eleron - 3*w0
-        #self.delta_eleron = self.eleron_spec - self.eleron_now
-        #self.eleron_now = self.eleron_spec + self.delta_eleron * self.transition_function_eleron
-        self.eleron_now = self.eleron_spec + self.eleron_spec * self.transition_function_eleron
-
-        # t == dt
+        #self.eleron_spec = self.delta_gamma * kp_eleron - 3*w0
+        eleron_spec = self.delta_gamma * kp_eleron - 3*w0
+        self.eleron_now = eleron_spec + eleron_spec * self.transition_function_eleron
 
         if (self.eleron_now * 180.0/np.pi >= 20) :
             self.eleron_now = 20/180.0*np.pi
@@ -96,10 +81,13 @@ class Control:
 control = Control()
 
 ny = 1
-a1 = control.get_elev_and_ny_new(ny)
+ny_s = 0.5
+a1 = control.get_elev_and_ny_new(ny, ny_s)
 print(a1)
 
 gamma1 = 0.52
-a2 = control.get_GammaAngle_and_eleron_now(gamma1)
+gamma_2 = 0.65
+w_0 = 0.01
+a2 = control.get_GammaAngle_and_eleron_now(gamma1, gamma_2, w_0)
 print(a2)
 """
