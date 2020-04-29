@@ -13,6 +13,12 @@ betta_array = []
 H_array = []
 X_array = []
 tang_array = []
+Vx_array =[]
+Vy_array = []
+Vz_array = []
+wx_array = []
+wy_array = []
+wz_array = []
 #Геометрия   
 Sw = 16.2     #м2 #Площадь крыла
 b = 10.91184  #м  #Размах
@@ -204,7 +210,7 @@ class Aerodynamics:
     def Integrator (self,F,M,F_sam,matrix1):
         
         n = (F + self.P) / (mass * 9.81)
-        V = self.V + (np.cross(self.w,self.V) + F_sam) * self.dt
+        V = self.V - (np.cross(self.w,self.V) + F_sam) * self.dt
         V_modul = self.Mod_V()
         w = self.w + np.dot(np.linalg.inv(inertia),M - np.cross(self.w,np.dot(self.w,inertia)))* self.dt
         angl = self.ugl_eil + np.dot(matrix1.T,self.w)*self.dt
@@ -266,7 +272,7 @@ while (t<=8):
     V = Aerodynamics.Get_data ()[3]
     w = Aerodynamics.Get_data ()[6]
     #alpha = Aerodynamics.Get_data ()[8]
-    #betta = Aerodynamics.Get_data ()[9]
+#   betta = Aerodynamics.Get_data ()[9]
     if t ==0:
         V_array.clear()
         w_array.clear()
@@ -284,6 +290,12 @@ while (t<=8):
     H_array.append(koord[1])
     X_array.append(koord[0])
     tang_array.append(angl[1])
+    Vx_array.append(V[0])
+    Vy_array.append(V[1])
+    Vz_array.append(V[2])
+    wx_array.append(w[0])
+    wy_array.append(w[1])
+    wz_array.append(w[2])
     #alpha_array.append(alpha)
     #betta_array.append(betta)  
     t=t+dt
@@ -313,5 +325,54 @@ plt.ylabel ("Угол тангажа, [рад]")
 plt.plot (t_array,tang_array)
 plt.legend()
 plt.grid()
+
+fig4 = plt.figure()
+plt.title("Изменение скорости по оси x")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Скорость по оси x, [м/c]")
+plt.plot (t_array,Vx_array)
+plt.legend()
+plt.grid()
+
+fig5 = plt.figure()
+plt.title("Изменение скорости по оси y")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Скорость по оси y, [м/c]")
+plt.plot (t_array,Vy_array)
+plt.legend()
+plt.grid()
+
+fig6 = plt.figure()
+plt.title("Изменение скорости по оси z")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Скорость по оси z, [м/c]")
+plt.plot (t_array,Vz_array)
+plt.legend()
+plt.grid()
+
+fig7 = plt.figure()
+plt.title("Изменение угловой скорости по оси z")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Угловая скорость по оси z, [м/c]")
+plt.plot (t_array,wx_array)
+plt.legend()
+plt.grid()
+
+fig8 = plt.figure()
+plt.title("Изменение угловой скорости по оси z")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Угловая скорость по оси z, [м/c]")
+plt.plot (t_array,wy_array)
+plt.legend()
+plt.grid()
+
+fig9 = plt.figure()
+plt.title("Изменение угловой скорости по оси z")
+plt.xlabel ("Время наблюдения, [c]")
+plt.ylabel ("Угловая скорость по оси z, [м/c]")
+plt.plot (t_array,wz_array)
+plt.legend()
+plt.grid()
+
 
 plt.show()   
