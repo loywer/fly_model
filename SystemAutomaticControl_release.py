@@ -28,7 +28,11 @@ class Control:
         self.w0 = w0
 
     def get_data (self) :
-        return self.elev_new, self.eleron_now
+
+        eliv_new = self.get_elev_and_ny_new (self.ny_spec, self.ny_now) 
+        eleron_now = self.get_GammaAngle_and_eleron_now (self.gamma_spec, self.gamma_now, self.w0)
+
+        return eliv_new, eleron_now
 
 
     def aperiodic_link (self, T) :
