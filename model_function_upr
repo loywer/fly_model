@@ -1,0 +1,44 @@
+import numpy as np
+from atmosphere import *
+from matplotlib import pyplot as plt
+
+delta_elev_data = np.array([-26, -20, -10, -5, 0, 7.5, 15, 22.5, 28])*np.pi/180.0
+delta_aile_data = np.array([-15, -10, -5, -2.5, 0, 5, 10, 15, 20])*np.pi/180.0  # degree
+CL_delta_elev_data = np.array([-0.132, -0.123, -0.082, -0.041, 0, 0.061, 0.116, 0.124, 0.137])
+#delta_elev_data = np.array([-26, -20, -10, -5, 0, 7.5, 15, 22.5, 28]
+
+H = 500
+atm = Atmosphere()
+atm.set_H(H)
+V = 70.0
+Sw = 16.2 
+m = 10**3
+b = 10.91184
+q = atm.get_density()*V**2/(2.0*m)
+gamma = 0.0
+dt=0.02
+w = np.array([0,0,0])
+J = np.diag([1/948, 1/1346, 1/1967]) * 1.35581795    # kg·m²
+
+def get_ny(elevator_angle):
+    Cy=np.interp(elevator_angle,delta_elev_data,CL_delta_elev_data)
+    return Cy*q*Sw    
+
+def get_gamma(eleron_angle):
+    global gamma
+    global w
+    Cl=np.interp(eleron_angle, delta_aile_data, CL_delta_elev_data)
+    l = Cl*q*b*Sw
+    M = np.array([l,0,0])
+    temp = np.dot(w,J)
+    temp = np.cross(w,temp)
+    temp = M - temp
+    dw = np.dot(temp,J)
+    w = w + dw*dt
+    gamma = gamma + w[0]*dt
+    return (gamma, w[0])
+"""
+for i in range(1000):
+    a = get_gamma(0.52)
+    print(a)
+"""
