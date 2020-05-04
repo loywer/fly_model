@@ -13,7 +13,6 @@ G = np.array([0,9.81,0])
 #Масса и инерция
 mass = 2300*0.453592
 inertia = (np.diag([948, 1346, 1967]))*1.35581795
-w = np.array([0,0,0])
 
 #Аэродинамика    
 alpha = np.deg2rad(np.array([-7.5,-5,-2.5,0,2.5,5,7.5,10,15,17,18,19.5])) #рад
@@ -79,7 +78,7 @@ class Aerodynamics:
         self.DeltaElev_vxod =DeltaElev_vxod 
         self.DeltaRud_vxod=DeltaRud_vxod
         self.DeltaAile_vxod = DeltaAile_vxod
-        self.P=np.array([P,0,0])
+        self.P=np.array([P,50,0])
         self.w_vxod = w_vxod
 
     #Матрица перехода из НСК в ССК
@@ -123,7 +122,7 @@ class Aerodynamics:
 
     def Aero_Forces_coefficient (self,Modul_V):
 
-        w_vxod_CkCK = self.transition_angl_speed_to_CkCK()
+        w_vxod = self.transition_angl_speed_to_CkCK()
 
     #Вычисление Cx
         CD_delta_elev_interp = RectBivariateSpline(deltaElev,alpha,Cx_DeltaElev)
@@ -208,6 +207,7 @@ class Aerodynamics:
         Forces = self.Aero_Forces ()
 
         Forces_CCK = np.dot(transition_matrix_CkCK_CCK,Forces)
+        #P_CCK = np.dot(transition_matrix_CkCK_CCK,self.P)
         G_CCK = np.dot(transition_matrix_NSK_CCK,G)  
         return Forces_CCK,G_CCK
 
@@ -224,7 +224,7 @@ class Aerodynamics:
 
         Forces_CCK = self.Translation_Forces_and_G_to_CCK ()[0]
 
-        n =((Forces_CCK + self.P) / mass*9.81)
+        n =((Forces_CCK + self.P) / (mass*9.81))
  
         return n
 
@@ -233,7 +233,10 @@ class Aerodynamics:
         
         Modul_V = self.speed_abs()
 
-        alpha_new = (-1)*np.arctan(V_vxod[1]/V_vxod[0])
+        if self.V_vxod[0] >= 0:
+            alpha_new = (-1)*np.arcsin((self.V_vxod[1])/(np.sqrt((self.V_vxod[0]**2)+(self.V_vxod[1]**2))))
+        else:
+            alpha_new = (-1)*np.pi + np.arcsin((abs(self.V_vxod[1]))/(np.sqrt(self.V_vxod[0]**2+self.V_vxod[1]**2))*np.sign(self.V_vxod[1]))
         betta_new = np.arcsin(self.V_vxod[2]/Modul_V)
 
         return alpha_new,betta_new
@@ -247,7 +250,7 @@ class Aerodynamics:
 # Линейное ускорение V_a
         V_a = (Forces_all - np.cross(self.w_vxod,self.V_vxod))
 # Угловое ускорение w_a
-        J_w = np.dot(inertia,self.w_vxod)
+        J_w = np.dot(self.w_vxod,inertia)
         w_J_W = np.cross(self.w_vxod,J_w)
         M_w_J_w = Moment - w_J_W
         inertia_obr = np.linalg.inv(inertia)
@@ -256,25 +259,34 @@ class Aerodynamics:
 
         return V_a,w_a
 
-    def right_side_of_the_DU_angl_and_koord (self):
+    def right_side_of_the_DU_angl (self):
+
+        pitchin = self.w_vxod[1]*sin(self.angl_vxod[0]) + self.w_vxod[2]*cos(self.angl_vxod[0])
+        rolling = self.w_vxod[0] - (self.w_vxod[1]*cos(self.angl_vxod[0]) - self.w_vxod[2]*sin(self.angl_vxod[0]))*np.tan(self.angl_vxod[2])
+        yaming = (self.w_vxod[1]*cos(self.angl_vxod[0]) - self.w_vxod[2]*sin(self.angl_vxod[0]))/cos(self.angl_vxod[0])
+        angl_prav = np.array([rolling,yaming,pitchin])
+
+        return angl_prav
+
+    def right_side_of_the_DU_koord (self):
 
         transition_matrix_NSK_CCK = self.matrix_NSK_CCK ()
 
-        angl_prav = np.dot(transition_matrix_NSK_CCK.T,self.w_vxod)               # w - надо перевести в другую систему координат
         koordinat_prav = np.dot(transition_matrix_NSK_CCK.T,self.V_vxod)
 
-        return angl_prav,koordinat_prav
+        return koordinat_prav
 
 #Интегратор
     def Integrator (self):  
 
         right_side_of_the_DU_V_and_w = self.finding_accelerations ()
-        right_side_of_the_DU_angl_and_koord = self.right_side_of_the_DU_angl_and_koord ()
+        right_side_of_the_DU_angl = self.right_side_of_the_DU_angl ()
+        right_side_of_the_DU_koord = self.right_side_of_the_DU_koord ()
 
         V_new = self.V_vxod + right_side_of_the_DU_V_and_w[0]*self.dt
         w_new = self.w_vxod + right_side_of_the_DU_V_and_w[1]*self.dt
-        angl_new = self.angl_vxod + right_side_of_the_DU_angl_and_koord[0]*self.dt
-        koordinat_new = self.koordinat_vxod + right_side_of_the_DU_angl_and_koord[1]*self.dt
+        angl_new = self.angl_vxod + right_side_of_the_DU_angl*self.dt
+        koordinat_new = self.koordinat_vxod + right_side_of_the_DU_koord*self.dt
 
         return V_new,w_new,angl_new,koordinat_new
 
