@@ -2,17 +2,6 @@ import numpy as np
 from scipy.interpolate import RectBivariateSpline
 from math import sin,cos
 from matplotlib import pyplot as plt
-#Создаем пустые вектора для построения графиков 
-n_array = []
-alpha_array = []
-betta_array = []
-V_a_array = []
-w_a_array = []
-V_array =[]
-w_array = []
-angl_array = []
-koordinat_array = []
-t_array = []
 #------------------------------------------------Начальные данные-------------------------------------------------------
 #Геометрия   
 Sw = 16.2     #м2 #Площадь крыла
@@ -110,9 +99,6 @@ class Aerodynamics:
         else:
             alpha = (-1)*np.pi + np.arcsin((abs(self.V[1]))/(np.sqrt(self.V[0]**2+self.V[1]**2))*np.sign(self.V[1]))
         betta = np.arcsin(self.V[2]/Modul_V)
-#Заносим найденные значения углов атаки и скольжения в вектор
-        alpha_array.append(alpha)
-        betta_array.append(betta)
 
         return alpha,betta
 
@@ -256,10 +242,7 @@ class Aerodynamics:
         Forces_CCK = self.Translation_Forces_and_G_to_CCK ()[0]
 
         n =((Forces_CCK + self.P) / (mass*self.g))
-#Заносим найденные значение перегрузки в вектор
-        n_array.append(n)
-        
- 
+
         return n
 
 # Вычисление линейных и угловых ускорений
@@ -276,9 +259,6 @@ class Aerodynamics:
         inertia_obr = np.linalg.inv(inertia)
 
         w_a = np.dot(inertia_obr,M_w_J_w)                            # Угловое ускорение w_a
-#Заносим найденные значения линейных и угловых ускорений в вектор
-        V_a_array.append(V_a)
-        w_a_array.append(w_a)
 
         return V_a,w_a
 
@@ -314,33 +294,12 @@ class Aerodynamics:
         return V_new,w_new,angl_new,koordinat_new
 
 #Функция вызова Get
-
     def Get_data (self):
 
-        global V_array
-        global w_array
-        global angl_array
-        global koordinat_array
-        global t_array
-
-        t = 0  #Цикл
-
-        while(t<=10):
-
-#Заполняем вектора
-            V_array.append(self.V)
-            w_array.append(self.w)
-            angl_array.append(self.angl)
-            koordinat_array.append(self.koordinat)
-            t_array.append(t)
-
-#Вызываем функции
-            n = self.overload()
-            alpha,betta = self.finding_angles_of_attack_and_slip()
-            V_a,w_a = self.finding_accelerations()
-            self.V,self.w,self.angl,self.koordinat = self.Integrator()
-
-            t = t + self.dt
+        n = self.overload()
+        alpha,betta = self.finding_angles_of_attack_and_slip()
+        V_a,w_a = self.finding_accelerations()
+        self.V,self.w,self.angl,self.koordinat = self.Integrator()
 
         return n,alpha,betta,V_a,w_a,self.V,self.w,self.angl,self.koordinat
 
