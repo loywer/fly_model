@@ -21,16 +21,18 @@ class Aircraft:
        self.atmos.set_H(X[1])
        ro = self.atmos.get_density()
        g = self.atmos.get_accel_of_gravity()
-       #self.control.set_data(ny_zad,n[1],gama_zad,angle[0],w[0])
+       self.control.set_data(ny_zad,n[1],gama_zad,angle[0],w[0])
        eliv,eleron = self.control.get_data()
        V_m=np.sqrt(np.dot(V,V))
-       #self.engine.Set_data(V_m,v_zad,ro)
-       #P,M = self.engine.Get_data()
        P = 1
        eliv = 0.0
-       eleron = 0.0
+       self.engine.Set_data(V_m,v_zad,ro)
+       P,M = self.engine.Get_data()
+       P = np.array([5000,0,0])
+       eliv = -0.17
+       eleron = 0.05
        self.aerodynamic.Set_data(P,dt,eliv,0,eleron,ro,g)
-       return alpha
+       return angle[0]
 H=2000
 angle=np.array([0,0,0])
 V = np.array([50,0,0])
@@ -40,7 +42,7 @@ t=0
 X=[]
 TT=[]
 while(T>t):
-    x=plane.run(55,0.0,3.0,0.02)
+    x=plane.run(55,0.0,0.0,0.02)
     t+=0.02
 
     X.append(x)
