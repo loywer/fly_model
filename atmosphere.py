@@ -26,7 +26,7 @@ class Atmosphere:
         self.Density = self.pressure * MOLAR_MASS/(self.T * UNIVRSAL_GAS_CONST) 
         self.V_sound = 20.046796*self.T**0.5
 
-    def get_accel_of_gravity(self, height):
+    def get_accel_of_gravity(self):
         """
         Function for calculating the acceleration of gravity as a function of height.
         """

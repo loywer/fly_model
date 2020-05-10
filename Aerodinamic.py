@@ -71,6 +71,14 @@ class Aerodynamics:
         self.V = [50,0,0]
         H = 500
         self.koordinat = [0,H,0]   # X,Y,Z
+        self.dt = 0.02
+        self.ro=1.25    #Плотность
+        self.DeltaElev =0
+        self.DeltaRud=0
+        self.DeltaAile = 0
+        self.P=0
+        self.g=9.81
+        self.G=[0,-self.g,0]
 
     def Set_data (self,P,dt,DeltaElev,DeltaRud,DeltaAile,ro,g):
 
@@ -79,7 +87,7 @@ class Aerodynamics:
         self.DeltaElev =DeltaElev 
         self.DeltaRud=DeltaRud
         self.DeltaAile = DeltaAile
-        self.P=np.array([P,0,0])
+        self.P=P
         self.g=g
         self.G=[0,-g,0]
 
@@ -302,18 +310,3 @@ class Aerodynamics:
         self.V,self.w,self.angl,self.koordinat = self.Integrator()
 
         return n,alpha,betta,V_a,w_a,self.V,self.w,self.angl,self.koordinat
-
-Aerodynamics = Aerodynamics ()
-
-# Начальные данные
-dt = 0.02
-ro = 1.225
-DeltaElev = 0
-DeltaRud = 0
-DeltaAile = 0
-P = 0
-g = 9.81
-
-#Вызываем функции
-Aerodynamics.Set_data (P,dt,DeltaElev,DeltaRud,DeltaAile,ro,g)
-Aerodynamics.Get_data ()

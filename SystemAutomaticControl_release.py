@@ -1,5 +1,4 @@
 import numpy as np
-from model_function_upr import *
 from matplotlib import pyplot as plt
 
 #eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
@@ -28,6 +27,8 @@ class Control:
         self.w0 = w0
 
     def get_data (self) :
+        self.get_elev_and_ny_new(self.ny_spec,self.ny_now)
+        self.get_GammaAngle_and_eleron_now(self.gamma_spec,self.gamma_now,self.w0)
         return self.elev_new, self.eleron_now
 
 
