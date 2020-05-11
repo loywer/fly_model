@@ -27,21 +27,21 @@ class Aircraft:
        self.engine.Set_data(V_m,v_zad,ro)
        P,M = self.engine.Get_data()
        #P = np.array([5000,0,0])
-      # eliv = -0.07
+       #eliv = -0.0
        eleron = 0.00
        self.aerodynamic.Set_data(P,dt,eliv,0,eleron,ro,g)
-       return angle[2]
+       return angle
 
 H=2000
 angle=np.array([0,0,0])
 V = np.array([50,0,0])
 plane = Aircraft(H,V,angle,0.02)
-T=100
+T=50
 t=0
 X=[]
 TT=[]
 while(T>t):
-    x=plane.run(55,0.0,0.0,0.02)
+    x=plane.run(55,0.0,0.0,0.002)
     t+=0.02
 
     X.append(x)

@@ -2,10 +2,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 #eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
-dt = 0.02
+dt = 0.002
 
-kp_elev = 0.5
-ki_elev = 0.5
+kp_elev = 0.025
+ki_elev = 1.25
 kp_eleron = 2
 
 t = 0

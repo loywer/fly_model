@@ -67,7 +67,7 @@ class Aerodynamics:
     def __init__ (self):
 
         self.w = [0,0,0]
-        self.angl = [0,0,0]    #Крен, рыскание,тангаж (Последовательность)
+        self.angl = [0,0.0,0]    #Крен, рыскание,тангаж (Последовательность)
         self.V = [50,0,0]
         H = 500
         self.koordinat = [0,H,0]   # X,Y,Z
@@ -192,11 +192,12 @@ class Aerodynamics:
         CNDeltaAile_interp = RectBivariateSpline(deltaAile_data,alpha_data,My_DeltaAile_data)
         my_5 = CNDeltaAile_interp(self.DeltaAile,alpha)[0, 0]
         my = my_1*betta+(b/(2*Modul_V))*(my_2*self.w[0]+my_3*self.w[1])+0.075*my_4*self.DeltaRud + my_5 
+       # my = 0
     #Вычисление mz
         mz_1 = np.interp(alpha,alpha_data,Mz_data)
-        mz_2 = np.interp(alpha,alpha_data,Mz_q_data)
+        mz_2 = np.interp(alpha,alpha_data,Mz_q_data)*0.0
         mz_3 = np.interp(self.DeltaElev,deltaElev_data,Mz_DeltaElev_data)
-        mz = mz_1+(c/(2*Modul_V))*2*mz_2*self.w[2]+mz_3  
+        mz = mz_1+(c/(2*Modul_V))*2*mz_2*self.w[2]*1.2+mz_3  
          
         Aero_Moment_coefficient = np.array([mx,my,mz])
 
@@ -223,9 +224,9 @@ class Aerodynamics:
         transition_matrix_CkCK_CCK = self.matrix_CkCK_CCK ()
         Forces = self.Aero_Forces ()
 
-        Forces_CCK = np.dot(transition_matrix_CkCK_CCK,Forces)
+        #Forces_CCK = np.dot(transition_matrix_CkCK_CCK,Forces)
         G_CCK = np.dot(transition_matrix_NSK_CCK,self.G)  
-        return Forces_CCK,G_CCK
+        return Forces,G_CCK
 
 #Функция вычисляющая силы действующие на самолет
     def Forces_all  (self):
@@ -287,6 +288,7 @@ class Aerodynamics:
 
         V_new = self.V + right_side_of_the_DU_V_and_w[0]*self.dt
         w_new = self.w + right_side_of_the_DU_V_and_w[1]*self.dt
+        self.angl[0]=0
         angl_new = self.angl + right_side_of_the_DU_angl*self.dt
         koordinat_new = self.koordinat + right_side_of_the_DU_koord*self.dt
 
