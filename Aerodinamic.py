@@ -137,17 +137,8 @@ class Aerodynamics:
 
         return transition_matrix_CkCK_CCK
 
-    def transition_angl_speed_to_CkCK (self):
-
-        transition_matrix_CkCK_CCK = self.matrix_CkCK_CCK()
-
-        w_CkCK = np.dot(transition_matrix_CkCK_CCK.T,self.w)
-
-        return w_CkCK
 
     def Aero_Forces_coefficient (self,Modul_V,alpha,betta):
-
-        w_CkCK = self.transition_angl_speed_to_CkCK()
 
     #Вычисление Cx
         CD_delta_elev_interp = RectBivariateSpline(deltaElev_data,alpha_data,Cx_DeltaElev_data)
@@ -158,13 +149,13 @@ class Aerodynamics:
         cy_1 = np.interp(alpha,alpha_data,Cy_data)
         cy_2 = np.interp(alpha,alpha_data,Cy_Q_data)
         cy_3 = np.interp(self.DeltaElev,deltaElev_data,Cy_DdeltaElev_data)
-        cy = cy_1+(c/(2*Modul_V))*cy_2*w_CkCK[2] + cy_3                   
+        cy = cy_1+(c/(2*Modul_V))*cy_2*self.w[2] + cy_3                   
     #Вычисление Cz
         cz_1 = np.interp(alpha,alpha_data, Cz_Betta_data) 
         cz_2 = np.interp(alpha,alpha_data,Cz_p_data) 
         cz_3 = np.interp(alpha,alpha_data,Cz_r_data)
         cz_4 = np.interp(alpha,alpha_data,Cz_DeltaRud_data)
-        cz = cz_1*betta+(b/(2*Modul_V))*(cz_2*w_CkCK[0]+cz_3*w_CkCK[1]) + cz_4*self.DeltaRud
+        cz = cz_1*betta+(b/(2*Modul_V))*(cz_2*self.w[0]+cz_3*self.w[1]) + cz_4*self.DeltaRud
 
         Aero_Forces_coefficient = np.array([cx,cy,cz])
 
