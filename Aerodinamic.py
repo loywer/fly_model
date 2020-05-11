@@ -67,18 +67,10 @@ class Aerodynamics:
     def __init__ (self):
 
         self.w = [0,0,0]
-        self.angl = [0,0.0,0]    #Крен, рыскание,тангаж (Последовательность)
+        self.angl = [0,0,0]    #Крен, тангаж, рыскание (Последовательность)
         self.V = [50,0,0]
         H = 500
         self.koordinat = [0,H,0]   # X,Y,Z
-        self.dt = 0.02
-        self.ro=1.25    #Плотность
-        self.DeltaElev =0
-        self.DeltaRud=0
-        self.DeltaAile = 0
-        self.P=0
-        self.g=9.81
-        self.G=[0,-self.g,0]
 
     def Set_data (self,P,dt,DeltaElev,DeltaRud,DeltaAile,ro,g):
 
@@ -87,7 +79,7 @@ class Aerodynamics:
         self.DeltaElev =DeltaElev 
         self.DeltaRud=DeltaRud
         self.DeltaAile = DeltaAile
-        self.P=P
+        self.P=np.array([P,0,0])
         self.g=g
         self.G=[0,-g,0]
 
@@ -136,7 +128,6 @@ class Aerodynamics:
                     [(sin(betta)) , 0 , (cos(betta))]])
 
         return transition_matrix_CkCK_CCK
-
 
     def Aero_Forces_coefficient (self,Modul_V,alpha,betta):
 
@@ -192,12 +183,11 @@ class Aerodynamics:
         CNDeltaAile_interp = RectBivariateSpline(deltaAile_data,alpha_data,My_DeltaAile_data)
         my_5 = CNDeltaAile_interp(self.DeltaAile,alpha)[0, 0]
         my = my_1*betta+(b/(2*Modul_V))*(my_2*self.w[0]+my_3*self.w[1])+0.075*my_4*self.DeltaRud + my_5 
-       # my = 0
     #Вычисление mz
         mz_1 = np.interp(alpha,alpha_data,Mz_data)
-        mz_2 = np.interp(alpha,alpha_data,Mz_q_data)*0.0
+        mz_2 = np.interp(alpha,alpha_data,Mz_q_data)
         mz_3 = np.interp(self.DeltaElev,deltaElev_data,Mz_DeltaElev_data)
-        mz = mz_1+(c/(2*Modul_V))*2*mz_2*self.w[2]*1.2+mz_3  
+        mz = mz_1+(c/(2*Modul_V))*2*mz_2*self.w[2]+mz_3  
          
         Aero_Moment_coefficient = np.array([mx,my,mz])
 
@@ -217,56 +207,52 @@ class Aerodynamics:
 
         return Moment
 
-    #Перевод сил и ускорения в ССК
-    def Translation_Forces_and_G_to_CCK (self):
-
-        transition_matrix_NSK_CCK = self.matrix_NSK_CCK ()
-        transition_matrix_CkCK_CCK = self.matrix_CkCK_CCK ()
-        Forces = self.Aero_Forces ()
-
-        #Forces_CCK = np.dot(transition_matrix_CkCK_CCK,Forces)
-        G_CCK = np.dot(transition_matrix_NSK_CCK,self.G)  
-        return Forces,G_CCK
-
 #Функция вычисляющая силы действующие на самолет
     def Forces_all  (self):
 
-        Forces_CCK,G_CCK = self.Translation_Forces_and_G_to_CCK ()
+        Forces = self.Aero_Forces ()
+        transition_matrix_NSK_CCK = self.matrix_NSK_CCK ()
 
-        Forces_all = ((Forces_CCK + self.P) / mass) + G_CCK
+        G_CCK = np.dot(transition_matrix_NSK_CCK,self.G) 
+        Forces_all = ((Forces + self.P) / mass) + G_CCK
 
         return Forces_all
 
     def overload (self):
 
-        Forces_CCK = self.Translation_Forces_and_G_to_CCK ()[0]
+        Forces = self.Aero_Forces ()
 
-        n =((Forces_CCK + self.P) / (mass*self.g))
-
+        n =((Forces + self.P) / (mass*self.g))
+ 
         return n
 
 # Вычисление линейных и угловых ускорений
-    def finding_accelerations (self):
+    def line_acceleration (self,V):
 
         Forces_all = self.Forces_all ()
+        V_a = (Forces_all - np.cross(self.w,V))                # Линейное ускорение V_a 
+
+        return V_a
+
+    def angl_acceleration (self,w):
+
         Moment = self.Aero_Moment ()
 
-        V_a = (Forces_all - np.cross(self.w,self.V))                # Линейное ускорение V_a                           
-
-        J_w = np.dot(self.w,inertia)
-        w_J_W = np.cross(self.w,J_w)
+        J_w = np.dot(w,inertia)
+        w_J_W = np.cross(w,J_w)
         M_w_J_w = Moment - w_J_W
         inertia_obr = np.linalg.inv(inertia)
 
         w_a = np.dot(inertia_obr,M_w_J_w)                            # Угловое ускорение w_a
 
-        return V_a,w_a
+        return w_a      
 
-    def right_side_of_the_DU_angl (self):
 
-        pitchin = self.w[1]*sin(self.angl[0]) + self.w[2]*cos(self.angl[0])
-        rolling = self.w[0] - (self.w[1]*cos(self.angl[0]) - self.w[2]*sin(self.angl[0]))*np.tan(self.angl[2])
-        yaming = (self.w[1]*cos(self.angl[0]) - self.w[2]*sin(self.angl[0]))/cos(self.angl[0])
+    def right_side_of_the_DU_angl (self,angl):
+
+        pitchin = self.w[1]*sin(angl[0]) + self.w[2]*cos(angl[0])
+        rolling = self.w[0] - (self.w[1]*cos(angl[0]) - self.w[2]*sin(angl[0]))*np.tan(angl[2])
+        yaming = (self.w[1]*cos(angl[0]) - self.w[2]*sin(angl[0]))/cos(angl[0])
         angl_prav = np.array([rolling,yaming,pitchin])
 
         return angl_prav
@@ -279,27 +265,37 @@ class Aerodynamics:
 
         return koordinat_prav
 
+    def Runge_kuta(self,dy_dt,y,h):
+
+        K1 = h * dy_dt(y)
+        K2 = h * dy_dt(y+0.5*K1)
+        K3 = h * dy_dt(y+0.5*K2)
+        K4 = h * dy_dt(y+K3)
+
+        y = y + (1/6) * (K1 + 2*K2 + 2*K3 + K4)
+
+        return y
+
 #Интегратор
     def Integrator (self):  
 
-        right_side_of_the_DU_V_and_w = self.finding_accelerations ()
-        right_side_of_the_DU_angl = self.right_side_of_the_DU_angl ()
         right_side_of_the_DU_koord = self.right_side_of_the_DU_koord ()
 
-        V_new = self.V + right_side_of_the_DU_V_and_w[0]*self.dt
-        w_new = self.w + right_side_of_the_DU_V_and_w[1]*self.dt
-        self.angl[0]=0
-        angl_new = self.angl + right_side_of_the_DU_angl*self.dt
+        V_new = self.Runge_kuta (self.line_acceleration,self.V,self.dt)
+        w_new = self.Runge_kuta(self.angl_acceleration,self.w,self.dt)
+        angl_new = self.Runge_kuta(self.right_side_of_the_DU_angl,self.angl,self.dt)
         koordinat_new = self.koordinat + right_side_of_the_DU_koord*self.dt
 
         return V_new,w_new,angl_new,koordinat_new
 
 #Функция вызова Get
+
     def Get_data (self):
 
         n = self.overload()
         alpha,betta = self.finding_angles_of_attack_and_slip()
-        V_a,w_a = self.finding_accelerations()
+        V_a = self.line_acceleration(self.V)
+        w_a = self.angl_acceleration(self.angl)
         self.V,self.w,self.angl,self.koordinat = self.Integrator()
 
         return n,alpha,betta,V_a,w_a,self.V,self.w,self.angl,self.koordinat
