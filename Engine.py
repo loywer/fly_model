@@ -71,7 +71,7 @@ class Engine(object):
 
     # Функция вывода значений
     def Get_data(self):
-        sp_omega = self.spec_omega(self.spec_speed, self.current_speed)
+        sp_omega = self.Get_mode(1)
         thrust = self.get_tractive_power(sp_omega, self.current_speed)
         moment = self.torque(sp_omega, self.spec_speed)
         return thrust, moment
