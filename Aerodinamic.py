@@ -71,6 +71,14 @@ class Aerodynamics:
         self.V = [50,0,0]
         H = 500
         self.koordinat = [0,H,0]   # X,Y,Z
+        self.dt = 0.02
+        self.ro=1.25    #Плотность
+        self.DeltaElev =0
+        self.DeltaRud=0
+        self.DeltaAile = 0
+        self.P=0
+        self.g=9.81
+        self.G=[0,-self.g,0]
 
     def Set_data (self,P,dt,DeltaElev,DeltaRud,DeltaAile,ro,g):
 
@@ -79,7 +87,7 @@ class Aerodynamics:
         self.DeltaElev =DeltaElev 
         self.DeltaRud=DeltaRud
         self.DeltaAile = DeltaAile
-        self.P=np.array([P,0,0])
+        self.P=P
         self.g=g
         self.G=[0,-g,0]
 
@@ -129,17 +137,8 @@ class Aerodynamics:
 
         return transition_matrix_CkCK_CCK
 
-    def transition_angl_speed_to_CkCK (self):
-
-        transition_matrix_CkCK_CCK = self.matrix_CkCK_CCK()
-
-        w_CkCK = np.dot(transition_matrix_CkCK_CCK.T,self.w)
-
-        return w_CkCK
 
     def Aero_Forces_coefficient (self,Modul_V,alpha,betta):
-
-        w_CkCK = self.transition_angl_speed_to_CkCK()
 
     #Вычисление Cx
         CD_delta_elev_interp = RectBivariateSpline(deltaElev_data,alpha_data,Cx_DeltaElev_data)
@@ -150,13 +149,13 @@ class Aerodynamics:
         cy_1 = np.interp(alpha,alpha_data,Cy_data)
         cy_2 = np.interp(alpha,alpha_data,Cy_Q_data)
         cy_3 = np.interp(self.DeltaElev,deltaElev_data,Cy_DdeltaElev_data)
-        cy = cy_1+(c/(2*Modul_V))*cy_2*w_CkCK[2] + cy_3                   
+        cy = cy_1+(c/(2*Modul_V))*cy_2*self.w[2] + cy_3                   
     #Вычисление Cz
         cz_1 = np.interp(alpha,alpha_data, Cz_Betta_data) 
         cz_2 = np.interp(alpha,alpha_data,Cz_p_data) 
         cz_3 = np.interp(alpha,alpha_data,Cz_r_data)
         cz_4 = np.interp(alpha,alpha_data,Cz_DeltaRud_data)
-        cz = cz_1*betta+(b/(2*Modul_V))*(cz_2*w_CkCK[0]+cz_3*w_CkCK[1]) + cz_4*self.DeltaRud
+        cz = cz_1*betta+(b/(2*Modul_V))*(cz_2*self.w[0]+cz_3*self.w[1]) + cz_4*self.DeltaRud
 
         Aero_Forces_coefficient = np.array([cx,cy,cz])
 
@@ -302,18 +301,3 @@ class Aerodynamics:
         self.V,self.w,self.angl,self.koordinat = self.Integrator()
 
         return n,alpha,betta,V_a,w_a,self.V,self.w,self.angl,self.koordinat
-
-Aerodynamics = Aerodynamics ()
-
-# Начальные данные
-dt = 0.02
-ro = 1.225
-DeltaElev = 0
-DeltaRud = 0
-DeltaAile = 0
-P = 0
-g = 9.81
-
-#Вызываем функции
-Aerodynamics.Set_data (P,dt,DeltaElev,DeltaRud,DeltaAile,ro,g)
-Aerodynamics.Get_data ()
