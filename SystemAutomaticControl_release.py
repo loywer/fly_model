@@ -4,9 +4,8 @@ from matplotlib import pyplot as plt
 #eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
 dt = 0.02
 
-kp_elev = 1.5
+kp_elev = 0.5
 ki_elev = 0.5
-
 kp_eleron = 2
 
 t = 0
@@ -45,11 +44,11 @@ class Control:
         global elev_spec
 
         self.transition_function_elev = self.aperiodic_link(T_elev)
-        self.delta_ny = ny_spec - ny_now
+        self.delta_ny = - ny_spec + ny_now
         I = I + self.delta_ny * (ki_elev*dt)
-        elev_spec = elev_spec + I + self.delta_ny * kp_elev
+        elev_spec = I + self.delta_ny * kp_elev
         #delta_elev = elev_spec - elev_new
-        self.elev_new = elev_spec + elev_spec * self.transition_function_elev
+        self.elev_new = elev_spec 
 
         if (self.elev_new * 180.0/np.pi >= 26) :
              self.elev_new = 26/180.0*np.pi

@@ -67,7 +67,7 @@ class Aerodynamics:
     def __init__ (self):
 
         self.w = [0,0,0]
-        self.angl = [0,0,0]    #Крен, тангаж, рыскание (Последовательность)
+        self.angl = [0,0,0]    #Крен, рыскание,тангаж (Последовательность)
         self.V = [50,0,0]
         H = 500
         self.koordinat = [0,H,0]   # X,Y,Z
