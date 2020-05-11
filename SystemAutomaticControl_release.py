@@ -4,21 +4,23 @@ from matplotlib import pyplot as plt
 #eps_ny = 0.01       # |(ny_now - ny_spec)| > eps_ny
 dt = 0.002
 
-kp_elev = 0.025
-ki_elev = 1.25
-kp_eleron = 2
-
+kp_elev = 10.5
+ki_elev = 0.0
+kd_elev = 0.8
+kp_eleron = 0.2
+kd_eleron = 0.5
 t = 0
 T_elev = 5
 T_eleron = 2.1
-
+lasn_d = 0
 I = 0
+last_D = 0
 elev_spec = 0
 
 class Control:
 
     def set_data (self, ny_spec, ny_now, gamma_spec, gamma_now, w0) :
-
+        
         self.ny_spec = ny_spec
         self.ny_now = ny_now
         self.gamma_spec = gamma_spec
@@ -42,14 +44,14 @@ class Control:
      
         global I
         global elev_spec
-
+        global last_D
         self.transition_function_elev = self.aperiodic_link(T_elev)
-        self.delta_ny = - ny_spec + ny_now
-        I = I + self.delta_ny * (ki_elev*dt)
-        elev_spec = I + self.delta_ny * kp_elev
+        self.delta_ny = - ny_spec + ny_now 
+        I = I + self.delta_ny*dt
+        elev_spec =I*ki_elev+(self.delta_ny-last_D)/dt*kd_elev + self.delta_ny * kp_elev
         #delta_elev = elev_spec - elev_new
         self.elev_new = elev_spec 
-
+        last_D = self.delta_ny
         if (self.elev_new * 180.0/np.pi >= 26) :
              self.elev_new = 26/180.0*np.pi
 
@@ -65,8 +67,8 @@ class Control:
         self.transition_function_eleron = self.aperiodic_link(T_eleron)
         self.delta_gamma = gamma_spec - gamma_now
         #self.eleron_spec = self.delta_gamma * kp_eleron - 3*w0
-        eleron_spec = self.delta_gamma * kp_eleron - 3*w0
-        self.eleron_now = eleron_spec + eleron_spec * self.transition_function_eleron
+        eleron_spec = self.delta_gamma * kp_eleron - kd_eleron*w0
+        self.eleron_now = eleron_spec 
 
         if (self.eleron_now * 180.0/np.pi >= 20) :
             self.eleron_now = 20/180.0*np.pi
